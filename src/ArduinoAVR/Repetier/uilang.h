@@ -110,7 +110,7 @@
 #define UI_TEXT_CONFIGURATION    "Configuration"
 #define UI_TEXT_POSITION         "Position"
 #define UI_TEXT_EXTRUDER         "Extruder"
-#define UI_TEXT_SD_CARD          "SD Card"
+#define UI_TEXT_SD_CARD          "Print file"   //"SD Card" change print file
 #define UI_TEXT_DEBUGGING        "Debugging"
 #define UI_TEXT_HOME_DELTA       "Home Delta"
 #define UI_TEXT_HOME_ALL         "Home All"
@@ -283,6 +283,27 @@
 #define UI_TEXT_WIZ_WAITTEMP1 "Wait for target"
 #define UI_TEXT_WIZ_WAITTEMP2 "temperatures ..."
 #define UI_TEXT_EXTRUDER_JAM "Extruder Jam"
+
+//after text code add by xky
+#define UI_TEXT_LOAD_FILAMENT_E0 "Load Filament E0"
+#define UI_TEXT_UNLOAD_FILAMENT_E0 "Unload Filament E0"
+#define UI_TEXT_LOAD_FILAMENT_E1 "Load Filament E1"
+#define UI_TEXT_LOAD_FILAMENT_E1 "Unload Filament E1"
+#define UI_TEXT_AUTO_LEVEING "Auto Leveling"
+#define UI_TEXT_NOZZLE_TO_HOTBED "Test Leveling"
+#define UI_TEXT_DELTA_ROD "Delta Rod:%ak"
+#define UI_TEXT_DELTA_RADIUS "Delta Radius:%al"
+#define UI_TEXT_SET_ENDSTOP_OFFSET "Set Ends. Offset"
+
+#define     UI_TEXT_X_ENDSTOP_OFFSET "X End. Off:%ao"
+#define 	UI_TEXT_Y_ENDSTOP_OFFSET "Y End. Off:%ap"
+#define 	UI_TEXT_Z_ENDSTOP_OFFSET "Z End. Off:%aq"
+
+#define     UI_TEXT_P1_OFFSET "P1 Offset:%p1"
+#define 	UI_TEXT_P2_OFFSET "P2 Offset:%p2"
+#define 	UI_TEXT_P3_OFFSET "P3 Offset:%p3"
+
+
 
 // *************** German translation ****************
 

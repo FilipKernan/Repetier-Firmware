@@ -378,6 +378,35 @@ FSTRINGVAR(tEPRRetractionUndoSpeed)
 FSTRINGVAR(tConfig)
 FSTRINGVAR(tExtrDot)
 
+//AFTER CODE ADD BY XKY   ******
+FSTRINGVAR(tAutoLeveingGcode)
+
+FSTRINGVAR(tAutoSetEndstopOffsetGcode)
+
+FSTRINGVAR(tLoadFilamentDistanceFast)
+FSTRINGVAR(tUnloadFilamentDistanceFast)
+FSTRINGVAR(tLoadFilamentDistanceSlow)
+FSTRINGVAR(tUnloadFilamentDistanceSlow)
+
+FSTRINGVAR(tNozzleCloseHotbed)
+
+//ABOUT ADJUST radius
+FSTRINGVAR(tTestRadiusMoveToXPositiveDirection)
+FSTRINGVAR(tTestRadiusMoveToXNegativeDirection)
+FSTRINGVAR(tTestRadiusMoveToXCenter)
+FSTRINGVAR(tTestRadiusMoveToYPositiveDirection)
+FSTRINGVAR(tTestRadiusMoveToYNegativeDirection)
+FSTRINGVAR(tTestRadiusMoveToYCenter)
+
+// add by xky about add new canshu
+FSTRINGVAR(tEPRZProbeP1Offset)
+FSTRINGVAR(tEPRZProbeP2Offset)
+FSTRINGVAR(tEPRZProbeP3Offset)
+
+
+//***********
+
+
 static void config(FSTRINGPARAM(text));
 static void config(FSTRINGPARAM(text),int value);
 static void config(FSTRINGPARAM(text),const char *msg);

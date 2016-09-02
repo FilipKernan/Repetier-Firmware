@@ -686,7 +686,7 @@ void UIDisplay::printRow(uint8_t r,char *txt,char *txt2,uint8_t changeAtCol)
     if(highlight)
     {
         u8g_SetColorIndex(&u8g,1);
-        u8g_draw_box(&u8g, 0, y + 1, u8g_GetWidth(&u8g), UI_FONT_HEIGHT + 1);
+        u8g_draw_box(&u8g, 0, y , u8g_GetWidth(&u8g), UI_FONT_HEIGHT + 2);  //xky edit
         u8g_SetColorIndex(&u8g, 0);
     }
     char c;
@@ -841,9 +841,11 @@ void UIDisplay::initialize()
     u8g_FirstPage(&u8g);
     do
     {
-        u8g_DrawBitmapP(&u8g, 128 - LOGO_WIDTH, 0, ((LOGO_WIDTH + 8) / 8), LOGO_HEIGHT, logo);
+        // u8g_DrawBitmapP(&u8g, 128 - LOGO_WIDTH, 0, ((LOGO_WIDTH + 8) / 8), LOGO_HEIGHT, logo);  //xky delete this code
         for(uint8_t y = 0; y < UI_ROWS; y++) displayCache[y][0] = 0;
-        printRowP(0, PSTR("Repetier"));
+		//after code edit by xky
+        //printRowP(0, PSTR("Repetier"));
+	printRowP(0, PSTR("lxfieware"));
         printRowP(1, PSTR("Ver " REPETIER_VERSION));
         printRowP(3, PSTR("Machine:"));
         printRowP(4, PSTR(UI_PRINTER_NAME));
@@ -1138,6 +1140,7 @@ void UIDisplay::parse(const char *txt,bool ram)
     {
         char c = (ram ? *(txt++) : pgm_read_byte(txt++));
         if(c == 0) break; // finished
+
         if(c != '%')
         {
             uid.printCols[col++] = c;
@@ -1174,6 +1177,14 @@ void UIDisplay::parse(const char *txt,bool ram)
 #if DRIVE_SYSTEM!=DELTA
             else if(c2 == 'J') addFloat(Printer::maxZJerk, 3, 1);
 #endif
+			//after code add by xky
+			else if(c2 == 'k') addFloat(EEPROM::deltaDiagonalRodLength(), 3, 1);
+			else if(c2 == 'l') addFloat(EEPROM::deltaHorizontalRadius(), 3, 1);
+						//after code add by xky
+			else if(c2 == 'o') addInt(EEPROM::deltaTowerXOffsetSteps(), 3);
+			else if(c2 == 'p') addInt(EEPROM::deltaTowerYOffsetSteps(), 3);
+			else if(c2 == 'q') addInt(EEPROM::deltaTowerZOffsetSteps(), 3);
+
             break;
 
         case 'd':
@@ -1227,6 +1238,9 @@ void UIDisplay::parse(const char *txt,bool ram)
 #endif
             if(c2 == 'c') fvalue = Extruder::current->tempControl.currentTemperatureC;
             else if(c2 >= '0' && c2 <= '9') fvalue=extruder[c2 - '0'].tempControl.currentTemperatureC;
+
+
+
             else if(c2 == 'b') fvalue = Extruder::getHeatedBedTemperature();
             else if(c2 == 'B')
             {
@@ -1260,6 +1274,13 @@ void UIDisplay::parse(const char *txt,bool ram)
             break;
         case 'O': // ops related stuff
             break;
+
+		case 'p': // add by xky 
+			if(c2 == '1') addFloat(EEPROM::zProbeP1Offset(), 2, 2);       //liang wei xiao shu
+			else if(c2 == '2') addFloat(EEPROM::zProbeP2Offset(), 2, 2);
+			else if(c2 == '3') addFloat(EEPROM::zProbeP3Offset(), 2, 2);
+            break;
+
         case 'l':
             if(c2 == 'a') addInt(lastAction,4);
 #if defined(CASE_LIGHTS_PIN) && CASE_LIGHTS_PIN >= 0
@@ -1403,7 +1424,9 @@ void UIDisplay::parse(const char *txt,bool ram)
                 for(uint8_t i = 0; i < NUM_EXTRUDER; i++)
                     if(tempController[i]->targetTemperatureC > 15) alloff = false;
 
-                long seconds = (alloff ? 0 : (HAL::timeInMilliseconds() - Printer::msecondsPrinting) / 1000) + HAL::eprGetInt32(EPR_PRINTING_TIME);
+                //long seconds = (alloff ? 0 : (HAL::timeInMilliseconds() - Printer::msecondsPrinting) / 1000) + HAL::eprGetInt32(EPR_PRINTING_TIME);
+				//XKY EDIT IT 
+				long seconds = (alloff ? 0 : (HAL::timeInMilliseconds() - Printer::msecondsPrinting) / 1000);
                 long tmp = seconds / 86400;
                 seconds -= tmp * 86400;
                 addInt(tmp, 5);
@@ -1420,7 +1443,9 @@ void UIDisplay::parse(const char *txt,bool ram)
             else if(c2 == 'f')     // Filament usage
             {
 #if EEPROM_MODE
-                float dist = Printer::filamentPrinted * 0.001 + HAL::eprGetFloat(EPR_PRINTING_DISTANCE);
+                //xky edit it
+                //float dist = Printer::filamentPrinted * 0.001 + HAL::eprGetFloat(EPR_PRINTING_DISTANCE);
+				float dist = Printer::filamentPrinted * 0.001 ;
 #else
                 float dist = Printer::filamentPrinted * 0.001;
 #endif
@@ -2523,6 +2548,7 @@ ZPOS1:
         Printer::setNoDestinationCheck(false);
         Commands::printCurrentPosition(PSTR("UI_ACTION_ZPOSITION "));
         break;
+
     case UI_ACTION_XPOSITION_FAST:
         if(!allowMoves) return false;
         PrintLine::moveRelativeDistanceInStepsReal(Printer::axisStepsPerMM[X_AXIS] * increment,0,0,0,Printer::homingFeedrate[X_AXIS],true);
@@ -2649,11 +2675,137 @@ ZPOS2:
     case UI_ACTION_MAX_JERK:
         INCREMENT_MIN_MAX(Printer::maxJerk,0.1,1,99.9);
         break;
+        
+  //after code add by xky	    **************************************************
+	case UI_ACTION_DELTA_ROD:		
+		float b;
+		b = EEPROM::deltaDiagonalRodLength();
+		INCREMENT_MIN_MAX(b,0.1,0.1,999.9);
+		HAL::eprSetFloat(EPR_DELTA_DIAGONAL_ROD_LENGTH, b);
+        Com::printFLN(PSTR("Delta Rod set to: "),b,3);
+		
+		Printer::updateDerivedParameter();
+
+		break;
+	case UI_ACTION_DELTA_RADIUS:
+		float a;
+		a = EEPROM::deltaHorizontalRadius();
+		INCREMENT_MIN_MAX(a,0.1,0.1,999.9);
+		HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS, a);
+        Com::printFLN(PSTR("Delta Radius set to: "),a,3);
+		Printer::radius0 = a;
+		Printer::updateDerivedParameter();
+		break;
+
+	case UI_ACTION_X_ENDSTOP_OFFSET:       //ADJUST ENDSTOP OFFSET  ADD FOR XKY
+		float c;
+		c = EEPROM::deltaTowerXOffsetSteps();
+		INCREMENT_MIN_MAX(c,1,0.1,9999);
+		EEPROM::setDeltaTowerXOffsetSteps(c);
+        Com::printFLN(PSTR("X Endstop Offset: "),c,3);
+		Printer::updateDerivedParameter();
+		break;
+
+	case UI_ACTION_Y_ENDSTOP_OFFSET:      //ADJUST ENDSTOP OFFSET  ADD FOR XKY
+		float d;
+		d = EEPROM::deltaTowerYOffsetSteps();
+		INCREMENT_MIN_MAX(d,1,0,9999);
+		EEPROM::setDeltaTowerYOffsetSteps(d);
+        Com::printFLN(PSTR("Y Endstop Offset: "),d,3);
+		Printer::updateDerivedParameter();
+		break;
+
+	case UI_ACTION_Z_ENDSTOP_OFFSET:      //ADJUST ENDSTOP OFFSET  ADD FOR XKY
+		float e;
+		e = EEPROM::deltaTowerZOffsetSteps();
+		INCREMENT_MIN_MAX(e,1,0,9999);
+		EEPROM::setDeltaTowerZOffsetSteps(e);
+        Com::printFLN(PSTR("Z Endstop Offset: "),e,3);
+		Printer::updateDerivedParameter();
+		break;
+
+	case UI_ACTION_P1_OFFSET:      //add by xky  p1 offset
+		float F;
+		F = EEPROM::zProbeP1Offset();
+		INCREMENT_MIN_MAX(F,0.01,-9,9);
+		EEPROM::setzProbeP1Offset(F);
+        Com::printFLN(PSTR("Set P1 Offset: "),F,3);
+		break;
+
+	case UI_ACTION_P2_OFFSET:      //add by xky  p2 offset
+		float G;
+		G = EEPROM::zProbeP2Offset();
+		INCREMENT_MIN_MAX(G,0.01,-9,9);
+		EEPROM::setzProbeP2Offset(G);
+        Com::printFLN(PSTR("Set P2 Offset: "),G,3);
+		break;
+
+	case UI_ACTION_P3_OFFSET:      //add by xky  p3 offset
+		float H;
+		H = EEPROM::zProbeP3Offset();
+		INCREMENT_MIN_MAX(H,0.01,-9,9);
+		EEPROM::setzProbeP3Offset(H);
+        Com::printFLN(PSTR("Set P3 Offset: "),H,3);
+		break;
+	//up code add by xky
+
+	case UI_ACTION_SET_Z_AIXS_TO_ZERO:    //this function about set z aixs to hotbed it can save data
+		/*
+		 if(!allowMoves) return false;
+        Printer::setNoDestinationCheck(true);
+
+#if UI_SPEEDDEPENDENT_POSITIONING
+        {
+            float d = 0.01 * (float)increment * lastNextAccumul;
+            if(fabs(d) * 1000 > Printer::maxFeedrate[Z_AXIS] * dtReal)
+                d *= Printer::maxFeedrate[Z_AXIS] * dtReal / (1000 * fabs(d));
+            long steps = (long)(d * Printer::axisStepsPerMM[Z_AXIS]);
+            steps = ( increment<0 ? RMath::min(steps,(long)increment) : RMath::max(steps,(long)increment));
+            PrintLine::moveRelativeDistanceInStepsReal(0,0,steps,0,Printer::maxFeedrate[Z_AXIS],false);
+        }
+#else
+        PrintLine::moveRelativeDistanceInStepsReal(0, 0, ((long)increment * Printer::axisStepsPerMM[Z_AXIS]) / 100, 0, Printer::homingFeedrate[Z_AXIS],false);
+#endif
+		*/
+			  //after part about save data
+		    Printer::setNoDestinationCheck(false);
+            Commands::printCurrentPosition(PSTR("UI_ACTION_ZPOSITION "));
+	      
+            Printer::updateCurrentPosition();
+
+			//add by xky can not save if not adjust z height
+			if (Printer::currentPosition[Z_AXIS] < -10 || Printer::currentPosition[Z_AXIS] > 10 || Printer::currentPosition[Z_AXIS] == 0  )
+			{
+				UI_STATUS("Err:Adjust Z Hight");
+			}
+			else
+			{
+
+            Printer::zLength -= Printer::currentPosition[Z_AXIS];
+            Printer::currentPositionSteps[Z_AXIS] = 0;
+            Printer::updateDerivedParameter();
+#if NONLINEAR_SYSTEM
+            transformCartesianStepsToDeltaSteps(Printer::currentPositionSteps, Printer::currentDeltaPositionSteps);
+#endif
+            Printer::updateCurrentPosition(true);
+            Com::printFLN(Com::tZProbePrinterHeight, Printer::zLength);
+#if EEPROM_MODE != 0
+            EEPROM::storeDataIntoEEPROM(false);
+            Com::printFLN(Com::tEEPROMUpdated);
+#endif
+            Commands::printCurrentPosition(PSTR("UI_ACTION_SET_MEASURED_ORIGIN "));
+			}
+		break;
+ //code add by xky  ******************************************************		
+
+
 #if DRIVE_SYSTEM != DELTA
     case UI_ACTION_MAX_ZJERK:
         INCREMENT_MIN_MAX(Printer::maxZJerk,0.1,0.1,99.9);
         break;
 #endif
+
+
     case UI_ACTION_HOMING_FEEDRATE_X:
     case UI_ACTION_HOMING_FEEDRATE_Y:
     case UI_ACTION_HOMING_FEEDRATE_Z:
@@ -3227,7 +3379,18 @@ int UIDisplay::executeAction(int action, bool allowMoves)
 #if MAX_HARDWARE_ENDSTOP_Z
         case UI_ACTION_SET_MEASURED_ORIGIN:
         {
-            Printer::updateCurrentPosition();
+			Printer::updateCurrentPosition();
+			//xky add by this code
+			//add by xky can not save if not adjust z height
+            
+
+			if (Printer::currentPosition[Z_AXIS] < -10 || Printer::currentPosition[Z_AXIS] > 10 || Printer::currentPosition[Z_AXIS] == 0  )
+			{
+				UI_STATUS("Err:Adjust Z Hight");
+			}
+			else
+			{
+
             Printer::zLength -= Printer::currentPosition[Z_AXIS];
             Printer::currentPositionSteps[Z_AXIS] = 0;
             Printer::updateDerivedParameter();
@@ -3242,6 +3405,7 @@ int UIDisplay::executeAction(int action, bool allowMoves)
 #endif
             Commands::printCurrentPosition(PSTR("UI_ACTION_SET_MEASURED_ORIGIN "));
         }
+		}
         break;
 #endif
         case UI_ACTION_SET_P1:
@@ -3329,6 +3493,94 @@ int UIDisplay::executeAction(int action, bool allowMoves)
         case UI_ACTION_TEMP_DEFECT:
             Printer::setAnyTempsensorDefect();
             break;
+
+ //after code ADD BY XKY  *********************************
+	    case UI_ACTION_RUN_AUTO_LEVEING:
+			GCode::executeFString(Com::tAutoLeveingGcode);		
+			break;
+		case UI_ACTION_LOAD_FILAMENT:
+			
+			if(!allowMoves) return false;
+              PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*570 / Printer::extrusionFactor,150,true,false);
+              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
+			  PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*20 / Printer::extrusionFactor,2,true,false);
+              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
+		
+			break;
+		case UI_ACTION_UNLOAD_FILAMENT:
+			 if(!allowMoves) return false;
+              PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*20 / Printer::extrusionFactor,2,true,false);
+              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
+			 if(!allowMoves) return false;
+              PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*-570 / Printer::extrusionFactor,150,true,false);
+              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
+
+			break;
+
+	    case UI_ACTION_NOZZLE_CLOSE_HOTBED:
+	        #if Z_HOME_DIR > 0
+                Printer::homeAxis(true, true,true);
+            #else
+                Printer::homeAxis(true, true, false);
+            #endif
+		 GCode::executeFString(Com::tNozzleCloseHotbed);			
+		break;
+		
+		case UI_ACTION_AUTO_SET_ENDSTOP_OFFSET:
+			GCode::executeFString(Com::tAutoSetEndstopOffsetGcode);	
+			break;
+
+	    //ABOUT ADJUST RADIUS
+		case UI_ACTION_TestRadiusMoveToXPositiveDirection:
+				//after code add by xky  ////test center point
+	        #if Z_HOME_DIR > 0
+            Printer::homeAxis(true, true, true);
+           #else
+            Printer::homeAxis(true, true, false);
+           #endif
+			GCode::executeFString(Com::tTestRadiusMoveToXPositiveDirection);	
+			break;
+
+        case UI_ACTION_TestRadiusMoveToXNegativeDirection:
+				//after code add by xky   //test x POINT
+	        #if Z_HOME_DIR > 0
+            Printer::homeAxis(true, true, true);
+           #else
+            Printer::homeAxis(true, true, false);
+           #endif
+			GCode::executeFString(Com::tTestRadiusMoveToXNegativeDirection);	
+				break;
+
+        case UI_ACTION_TestRadiusMoveToXCenter:         
+				//after code add by xky   //TEST Y POINT
+	        #if Z_HOME_DIR > 0
+            Printer::homeAxis(true, true, true);
+           #else
+            Printer::homeAxis(true, true, false);
+           #endif
+			GCode::executeFString(Com::tTestRadiusMoveToXCenter);	
+				break;
+
+        case UI_ACTION_TestRadiusMoveToYPositiveDirection: 
+				//after code add by xky    TEST z POINT
+	        #if Z_HOME_DIR > 0
+            Printer::homeAxis(true, true, true);
+           #else
+            Printer::homeAxis(true, true, false);
+           #endif
+			GCode::executeFString(Com::tTestRadiusMoveToYPositiveDirection);	
+				break;
+
+        case UI_ACTION_TestRadiusMoveToYNegativeDirection:
+
+			GCode::executeFString(Com::tTestRadiusMoveToYNegativeDirection);	
+				break;
+
+        case UI_ACTION_TestRadiusMoveToYCenter:           
+			GCode::executeFString(Com::tTestRadiusMoveToYCenter);	
+				break;
+       //  ***********************************************************************
+
         }
     refreshPage();
 #if UI_AUTORETURN_TO_MENU_AFTER!=0

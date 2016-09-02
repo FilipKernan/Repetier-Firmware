@@ -778,6 +778,7 @@ void Commands::processGCode(GCode *com)
     case 29: // G29 3 points, build average or distortion compensation
     {
 #if DISTORTION_CORRECTION
+        Printer::homeAxis(true, true,true);  //xky add this code
         float oldFeedrate = Printer::feedrate;
         Printer::measureDistortion();
         Printer::feedrate = oldFeedrate;
@@ -864,13 +865,16 @@ void Commands::processGCode(GCode *com)
         Printer::setAutolevelActive(false); // iterate
         float h1,h2,h3,hc,oldFeedrate = Printer::feedrate;
         Printer::moveTo(EEPROM::zProbeX1(),EEPROM::zProbeY1(),IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-        h1 = Printer::runZProbe(true,false,Z_PROBE_REPETITIONS,false);
+		//HEAR EDIT BY XKY  
+        h1 = Printer::runZProbe(true,false,Z_PROBE_REPETITIONS,false) - EEPROM::zProbeP1Offset();
         if(h1 < 0) break;
         Printer::moveTo(EEPROM::zProbeX2(),EEPROM::zProbeY2(),IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-        h2 = Printer::runZProbe(false,false);
+		//HEAR EDIT BY XKY  
+        h2 = Printer::runZProbe(false,false) - EEPROM::zProbeP2Offset();
         if(h2 < 0) break;
         Printer::moveTo(EEPROM::zProbeX3(),EEPROM::zProbeY3(),IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-        h3 = Printer::runZProbe(false,true);
+		//HEAR EDIT BY XKY  
+        h3 = Printer::runZProbe(false,true) - EEPROM::zProbeP3Offset();
         if(h3 < 0) break;
         Printer::buildTransformationMatrix(h1,h2,h3);
         //-(Rxx*Ryz*y-Rxz*Ryx*y+(Rxz*Ryy-Rxy*Ryz)*x)/(Rxy*Ryx-Rxx*Ryy)
@@ -1133,6 +1137,59 @@ void Commands::processGCode(GCode *com)
         Com::printF(PSTR("PosFromSteps:"));
         printCurrentPosition(PSTR("G134 "));
         break;
+
+
+		//after code add by xky about color tech screen
+	case 301: // G301
+	        #if Z_HOME_DIR > 0
+                Printer::homeAxis(true, true,true);
+            #else
+                Printer::homeAxis(true, true, false);
+            #endif
+		 GCode::executeFString(Com::tNozzleCloseHotbed);	
+        break;
+
+	case 302: // G302
+
+        Printer::setNoDestinationCheck(true);
+		PrintLine::moveRelativeDistanceInStepsReal(0, 0, (10 * Printer::axisStepsPerMM[Z_AXIS]) / 100, 0, Printer::homingFeedrate[Z_AXIS],false);
+        Printer::setNoDestinationCheck(false);
+        Commands::printCurrentPosition(PSTR("UI_ACTION_ZPOSITION "));
+        break;
+
+	case 303: // G303
+
+        Printer::setNoDestinationCheck(true);
+		PrintLine::moveRelativeDistanceInStepsReal(0, 0, (-10 * Printer::axisStepsPerMM[Z_AXIS]) / 100, 0, Printer::homingFeedrate[Z_AXIS],false);
+        Printer::setNoDestinationCheck(false);
+        Commands::printCurrentPosition(PSTR("UI_ACTION_ZPOSITION "));
+        break;
+	case 304: // G304
+				//after part about save data
+		    Printer::updateCurrentPosition();
+			//add by xky 
+			if (Printer::currentPosition[Z_AXIS] < -10 || Printer::currentPosition[Z_AXIS] > 10 || Printer::currentPosition[Z_AXIS]  == 0  )
+			{
+				UI_STATUS_UPD("Err:Adjust Z Hight");
+			}
+			else
+			{
+            Printer::zLength -= Printer::currentPosition[Z_AXIS];
+            Printer::currentPositionSteps[Z_AXIS] = 0;
+            Printer::updateDerivedParameter();
+         #if NONLINEAR_SYSTEM
+            transformCartesianStepsToDeltaSteps(Printer::currentPositionSteps, Printer::currentDeltaPositionSteps);
+         #endif
+            Printer::updateCurrentPosition(true);
+            Com::printFLN(Com::tZProbePrinterHeight, Printer::zLength);
+         #if EEPROM_MODE != 0
+            EEPROM::storeDataIntoEEPROM(false);
+            Com::printFLN(Com::tEEPROMUpdated);
+         #endif
+            Commands::printCurrentPosition(PSTR("UI_ACTION_SET_MEASURED_ORIGIN "));
+			}
+        break;
+
 
 #endif // DRIVE_SYSTEM
     default:

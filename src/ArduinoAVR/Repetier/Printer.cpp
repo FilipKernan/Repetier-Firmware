@@ -1559,18 +1559,18 @@ void Printer::resetTransformationMatrix(bool silent)
 
 void Printer::buildTransformationMatrix(float h1,float h2,float h3)
 {
-    float ax = EEPROM::zProbeX2()-EEPROM::zProbeX1();
+	    float ax = EEPROM::zProbeX2()-EEPROM::zProbeX1();
     float ay = EEPROM::zProbeY2()-EEPROM::zProbeY1();
     float az = h1-h2;
     float bx = EEPROM::zProbeX3()-EEPROM::zProbeX1();
     float by = EEPROM::zProbeY3()-EEPROM::zProbeY1();
     float bz = h1-h3;
     // First z direction
-    autolevelTransformation[6] = ay * bz - az * by;
-    autolevelTransformation[7] = az * bx - ax * bz;
-    autolevelTransformation[8] = ax * by - ay * bx;
-    float len = sqrt(autolevelTransformation[6] * autolevelTransformation[6] + autolevelTransformation[7] * autolevelTransformation[7] + autolevelTransformation[8] * autolevelTransformation[8]);
-    if(autolevelTransformation[8] < 0) len = -len;
+    autolevelTransformation[6] = ay*bz-az*by;
+    autolevelTransformation[7] = az*bx-ax*bz;
+    autolevelTransformation[8] = ax*by-ay*bx;
+    float len = sqrt(autolevelTransformation[6]*autolevelTransformation[6]+autolevelTransformation[7]*autolevelTransformation[7]+autolevelTransformation[8]*autolevelTransformation[8]);
+    if(autolevelTransformation[8]<0) len = -len;
     autolevelTransformation[6] /= len;
     autolevelTransformation[7] /= len;
     autolevelTransformation[8] /= len;
@@ -1578,17 +1578,17 @@ void Printer::buildTransformationMatrix(float h1,float h2,float h3)
     autolevelTransformation[4] = autolevelTransformation[8];
     autolevelTransformation[5] = -autolevelTransformation[7];
     // cross(y,z)
-    autolevelTransformation[0] = autolevelTransformation[4] * autolevelTransformation[8] - autolevelTransformation[5] * autolevelTransformation[7];
-    autolevelTransformation[1] = autolevelTransformation[5] * autolevelTransformation[6];// - autolevelTransformation[3] * autolevelTransformation[8];
-    autolevelTransformation[2] = /*autolevelTransformation[3] * autolevelTransformation[7]*/ - autolevelTransformation[4] * autolevelTransformation[6];
-    len = sqrt(autolevelTransformation[0] * autolevelTransformation[0] + autolevelTransformation[1] * autolevelTransformation[1] + autolevelTransformation[2] * autolevelTransformation[2]);
+    autolevelTransformation[0] = autolevelTransformation[4]*autolevelTransformation[8]-autolevelTransformation[5]*autolevelTransformation[7];
+    autolevelTransformation[1] = autolevelTransformation[5]*autolevelTransformation[6]-autolevelTransformation[3]*autolevelTransformation[8];
+    autolevelTransformation[2] = autolevelTransformation[3]*autolevelTransformation[7]-autolevelTransformation[4]*autolevelTransformation[6];
+    len = sqrt(autolevelTransformation[0]*autolevelTransformation[0]+autolevelTransformation[2]*autolevelTransformation[2]);
     autolevelTransformation[0] /= len;
-    autolevelTransformation[1] /= len;
     autolevelTransformation[2] /= len;
-    len = sqrt(autolevelTransformation[4] * autolevelTransformation[4] + autolevelTransformation[5] * autolevelTransformation[5]);
+    len = sqrt(autolevelTransformation[4]*autolevelTransformation[4]+autolevelTransformation[5]*autolevelTransformation[5]);
     autolevelTransformation[4] /= len;
     autolevelTransformation[5] /= len;
-    Com::printArrayFLN(Com::tTransformationMatrix,autolevelTransformation, 9, 6);
+    Com::printArrayFLN(Com::tInfo,autolevelTransformation,9,5);
+  
 }
 #endif
 

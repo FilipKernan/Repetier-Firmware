@@ -393,6 +393,33 @@ FSTRINGVALUE(Com::tEPRRetractionUndoSpeed,"Retraction undo speed")
 FSTRINGVALUE(Com::tConfig,"Config:")
 FSTRINGVALUE(Com::tExtrDot,"Extr.")
 
+//after code add by xky  ******
+FSTRINGVALUE(Com::tAutoLeveingGcode,"G32 S2")
+
+FSTRINGVALUE(Com::tAutoSetEndstopOffsetGcode,"G132 S1")
+
+FSTRINGVALUE(Com::tLoadFilamentDistanceFast,"G1 E245 F9000")
+FSTRINGVALUE(Com::tUnloadFilamentDistanceFast,"G1 E-245 F9000")
+FSTRINGVALUE(Com::tLoadFilamentDistanceSlow,"G92 E0 /n G1 E12 F500")
+FSTRINGVALUE(Com::tUnloadFilamentDistanceSlow,"G92 E0 /n G1 E-12 F500")
+
+FSTRINGVALUE(Com::tNozzleCloseHotbed,"G1 Z0")
+
+//ABOUT ADJUST radius
+FSTRINGVALUE(Com::tTestRadiusMoveToXPositiveDirection,"G1 X140")
+FSTRINGVALUE(Com::tTestRadiusMoveToXNegativeDirection,"G1 X-140")
+FSTRINGVALUE(Com::tTestRadiusMoveToXCenter,"G1 X0")
+FSTRINGVALUE(Com::tTestRadiusMoveToYPositiveDirection,"G1 Y140")
+FSTRINGVALUE(Com::tTestRadiusMoveToYNegativeDirection,"G1 Y-140")
+FSTRINGVALUE(Com::tTestRadiusMoveToYCenter,"G1 Y0")
+
+// add by xky add new canshu
+FSTRINGVALUE(Com::tEPRZProbeP1Offset,"Z Probe P1 Offset [mm]")
+FSTRINGVALUE(Com::tEPRZProbeP2Offset,"Z Probe P2 Offset [mm]")
+FSTRINGVALUE(Com::tEPRZProbeP3Offset,"Z Probe P3 Offset [mm]")
+
+//********
+
 void Com::config(FSTRINGPARAM(text)) {
     printF(tConfig);
     printFLN(text);
