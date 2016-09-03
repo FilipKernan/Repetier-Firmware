@@ -430,6 +430,10 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define Z_ACCELERATION_TOP 0
 #endif
 
+#ifndef ACCELERATION_FACTOR_TOP
+#define ACCELERATION_FACTOR_TOP 0
+#endif
+
 #include "HAL.h"
 #include "gcode.h"
 #define MAX_VFAT_ENTRIES (2)

@@ -552,17 +552,6 @@ UI_MENU_ACTIONCOMMAND_T(ui_menu_set_measured_origin,UI_TEXT_SET_MEASURED_ORIGIN_
 UI_MENU(ui_menu_delta,UI_MENU_DELTA,2 + UI_SPEED + UI_MENU_BACKCNT)
 #endif
 
-//// **** AFTER CODE ADD BY XKY  
-//// THIS FUNCTION IS ABOUT AUTO CHANGE FILAMENT
-
-//UI_MENU_ACTIONCOMMAND(ui_menu_load_filament,"Load Filament",UI_ACTION_LOAD_FILAMENT)
-//UI_MENU_ACTIONCOMMAND(ui_menu_unload_filament,"Unload Filament",UI_ACTION_UNLOAD_FILAMENT)
-//#define UI_MENU_AUTO_CHANGE_FILAMENT {UI_MENU_ADDCONDBACK &ui_menu_load_filament,&ui_menu_unload_filament}
-//UI_MENU(ui_menu_auto_change_filament,UI_MENU_AUTO_CHANGE_FILAMENT,2 + UI_MENU_BACKCNT)
-//UI_MENU_SUBMENU(ui_menu_auto_change_filament_sub,"auto change filament",ui_menu_auto_change_filament)
-//#define UI_MENU_AUTO_CHANGE_FILAMENT_COND &ui_menu_auto_change_filament_sub,
-//#define UI_MENU_AUTO_CHANGE_FILAMENT_CNT 2
-
 // **** Bed leveling menu
 #ifdef SOFTWARE_LEVELING
 UI_MENU_ACTIONCOMMAND_T(ui_menu_set_p1,UI_TEXT_SET_P1_ID,UI_ACTION_SET_P1)
@@ -637,10 +626,6 @@ UI_MENU_ACTIONCOMMAND_T(ui_menu_quick_cooldown,UI_TEXT_COOLDOWN_ID,UI_ACTION_COO
 UI_MENU_ACTIONCOMMAND_FILTER_T(ui_menu_quick_origin,UI_TEXT_SET_TO_ORIGIN_ID,UI_ACTION_SET_ORIGIN,0,MENU_MODE_PRINTING)
 UI_MENU_ACTIONCOMMAND_FILTER_T(ui_menu_quick_stopstepper,UI_TEXT_DISABLE_STEPPER_ID,UI_ACTION_DISABLE_STEPPER,0,MENU_MODE_PRINTING)
 
-//after code add by xky
-UI_MENU_ACTIONCOMMAND(ui_menu_load_filament,UI_TEXT_LOAD_FILAMENT_E0,UI_ACTION_LOAD_FILAMENT)
-UI_MENU_ACTIONCOMMAND(ui_menu_unload_filament,UI_TEXT_UNLOAD_FILAMENT_E0,UI_ACTION_UNLOAD_FILAMENT)
-
 #if FEATURE_BABYSTEPPING
 UI_MENU_CHANGEACTION_T(ui_menu_quick_zbaby,UI_TEXT_Z_BABYSTEPPING_ID,UI_ACTION_Z_BABYSTEPS)
 #define BABY_CNT 1
@@ -668,11 +653,8 @@ UI_MENU_ACTIONCOMMAND_T(ui_menu_quick_changefil,UI_TEXT_CHANGE_FILAMENT_ID,UI_AC
 #define UI_CHANGE_FIL_ENT
 #endif
 
-//after code edit by xky   about add in change filament function
-//#define UI_MENU_QUICK {UI_MENU_ADDCONDBACK &ui_menu_home_all BABY_ENTRY ,&ui_menu_quick_speedmultiply,&ui_menu_quick_flowmultiply UI_TOOGLE_LIGHT_ENTRY UI_CHANGE_FIL_ENT,&ui_menu_quick_preheat_pla,&ui_menu_quick_preheat_abs,&ui_menu_quick_cooldown,&ui_menu_quick_origin,&ui_menu_quick_stopstepper,&ui_menu_load_filament,&ui_menu_unload_filament  MENU_PSON_ENTRY DEBUG_PRINT_EXTRA}
-//UI_MENU(ui_menu_quick,UI_MENU_QUICK,10+BABY_CNT+UI_MENU_BACKCNT+MENU_PSON_COUNT+DEBUG_PRINT_COUNT+UI_TOGGLE_LIGHT_COUNT+UI_CHANGE_FIL_CNT)
-#define UI_MENU_QUICK {UI_MENU_ADDCONDBACK &ui_menu_home_all BABY_ENTRY ,&ui_menu_quick_speedmultiply,&ui_menu_quick_flowmultiply UI_TOOGLE_LIGHT_ENTRY,&ui_menu_quick_preheat_pla,&ui_menu_quick_preheat_abs,&ui_menu_quick_cooldown,&ui_menu_quick_stopstepper,&ui_menu_load_filament,&ui_menu_unload_filament  MENU_PSON_ENTRY DEBUG_PRINT_EXTRA}
-UI_MENU(ui_menu_quick,UI_MENU_QUICK,9+BABY_CNT+UI_MENU_BACKCNT+MENU_PSON_COUNT+DEBUG_PRINT_COUNT+UI_TOGGLE_LIGHT_COUNT)
+#define UI_MENU_QUICK {UI_MENU_ADDCONDBACK &ui_menu_home_all BABY_ENTRY ,&ui_menu_quick_speedmultiply,&ui_menu_quick_flowmultiply UI_TOOGLE_LIGHT_ENTRY UI_CHANGE_FIL_ENT,&ui_menu_quick_preheat_pla,&ui_menu_quick_preheat_abs,&ui_menu_quick_cooldown,&ui_menu_quick_origin,&ui_menu_quick_stopstepper  MENU_PSON_ENTRY DEBUG_PRINT_EXTRA}
+UI_MENU(ui_menu_quick,UI_MENU_QUICK,10+BABY_CNT+UI_MENU_BACKCNT+MENU_PSON_COUNT+DEBUG_PRINT_COUNT+UI_TOGGLE_LIGHT_COUNT+UI_CHANGE_FIL_CNT)
 
 // **** Bed Coating Menu
 
@@ -766,14 +748,27 @@ UI_MENU_SUBMENU_T(ui_menu_sd_sub, UI_TEXT_SD_CARD_ID, ui_menu_sd)
 #define SD_PRINTFILE_ENTRY_CNT 0
 #endif
 
-// **** auto leveing   add by xky
+//// **** AFTER CODE ADD BY XKY
 UI_MENU_ACTIONCOMMAND(ui_menu_run_auto_leveing,UI_TEXT_AUTO_LEVEING,UI_ACTION_RUN_AUTO_LEVEING)
 UI_MENU_ACTIONCOMMAND(ui_menu_test_leveling,UI_TEXT_NOZZLE_TO_HOTBED,UI_ACTION_NOZZLE_CLOSE_HOTBED)
 #define UI_MENU_AUTO_LEVEING {UI_MENU_ADDCONDBACK &ui_menu_run_auto_leveing,&ui_menu_test_leveling,&ui_menu_go_zpos_notest,&ui_menu_set_measured_origin}
 UI_MENU(ui_menu_autoleveing,UI_MENU_AUTO_LEVEING,4 + UI_MENU_BACKCNT)
 UI_MENU_SUBMENU(ui_menu_auto_leveing_sub,UI_TEXT_AUTO_LEVEING,ui_menu_autoleveing)
-#define UI_MENU_AUTO_LEVEING_COND &ui_menu_auto_leveing_sub,
-#define UI_MENU_AUTO_LEVEING_CNT 1
+#define UI_MENU_AUTO_LEVEING_COND &ui_menu_auto_leveing_sub,ui_menu_conf_adjust_radius,ui_menu_conf_delta_settings
+#define UI_MENU_AUTO_LEVEING_CNT 3
+
+UI_MENU_CHANGEACTION(ui_menu_delta_rod,UI_TEXT_DELTA_ROD,UI_ACTION_DELTA_ROD)
+UI_MENU_CHANGEACTION(ui_menu_delta_radius,UI_TEXT_DELTA_RADIUS,UI_ACTION_DELTA_RADIUS)
+UI_MENU_ACTIONCOMMAND(ui_menu_set_endstop_offset,UI_TEXT_SET_ENDSTOP_OFFSET,UI_ACTION_AUTO_SET_ENDSTOP_OFFSET)
+
+UI_MENU_CHANGEACTION(ui_menu_x_endstop_offset,UI_TEXT_X_ENDSTOP_OFFSET,UI_ACTION_X_ENDSTOP_OFFSET)
+UI_MENU_CHANGEACTION(ui_menu_y_endstop_offset,UI_TEXT_Y_ENDSTOP_OFFSET,UI_ACTION_Y_ENDSTOP_OFFSET)
+UI_MENU_CHANGEACTION(ui_menu_z_endstop_offset,UI_TEXT_Z_ENDSTOP_OFFSET,UI_ACTION_Z_ENDSTOP_OFFSET)
+
+#define UI_MENU_DELTA_SETTINGS {UI_MENU_ADDCONDBACK &ui_menu_set_endstop_offset,&ui_menu_delta_rod,&ui_menu_delta_radius,&ui_menu_x_endstop_offset,&ui_menu_y_endstop_offset,&ui_menu_z_endstop_offset}
+UI_MENU(ui_menu_delta_settings, UI_MENU_DELTA_SETTINGS, 7)
+UI_MENU_SUBMENU(ui_menu_conf_delta_settings, "Delta Settings", ui_menu_delta_settings)
+//after code add by xky  ABOUT ADJUST RADIUS MENU
 
 // **** Debugging menu
 UI_MENU_ACTIONCOMMAND_T(ui_menu_debug_echo,   UI_TEXT_DBG_ECHO_ID,   UI_ACTION_DEBUG_ECHO)
@@ -906,45 +901,12 @@ UI_MENU(ui_menu_cextr,UI_MENU_CEXTR,7+UI_MENU_BACKCNT+UI_MENU_PIDCNT+UI_MENU_CON
  #endif
 #endif
 
-  //after code add by xky ABOUT DELTA SETTINGS
-UI_MENU_CHANGEACTION(ui_menu_delta_rod,UI_TEXT_DELTA_ROD,UI_ACTION_DELTA_ROD)
-UI_MENU_CHANGEACTION(ui_menu_delta_radius,UI_TEXT_DELTA_RADIUS,UI_ACTION_DELTA_RADIUS)
-UI_MENU_ACTIONCOMMAND(ui_menu_set_endstop_offset,UI_TEXT_SET_ENDSTOP_OFFSET,UI_ACTION_AUTO_SET_ENDSTOP_OFFSET)
-
-UI_MENU_CHANGEACTION(ui_menu_x_endstop_offset,UI_TEXT_X_ENDSTOP_OFFSET,UI_ACTION_X_ENDSTOP_OFFSET)
-UI_MENU_CHANGEACTION(ui_menu_y_endstop_offset,UI_TEXT_Y_ENDSTOP_OFFSET,UI_ACTION_Y_ENDSTOP_OFFSET)
-UI_MENU_CHANGEACTION(ui_menu_z_endstop_offset,UI_TEXT_Z_ENDSTOP_OFFSET,UI_ACTION_Z_ENDSTOP_OFFSET)
-
-UI_MENU_CHANGEACTION(ui_menu_p1_offset,UI_TEXT_P1_OFFSET,UI_ACTION_P1_OFFSET)
-UI_MENU_CHANGEACTION(ui_menu_p2_offset,UI_TEXT_P2_OFFSET,UI_ACTION_P2_OFFSET)
-UI_MENU_CHANGEACTION(ui_menu_p3_offset,UI_TEXT_P3_OFFSET,UI_ACTION_P3_OFFSET)
-
-//#define UI_MENU_DELTA_SETTINGS {UI_MENU_ADDCONDBACK &ui_menu_set_endstop_offset,&ui_menu_delta_rod,&ui_menu_delta_radius,&ui_menu_x_endstop_offset,&ui_menu_y_endstop_offset,&ui_menu_z_endstop_offset,&ui_menu_p1_offset,&ui_menu_p2_offset,&ui_menu_p3_offset}
-//UI_MENU(ui_menu_delta_settings, UI_MENU_DELTA_SETTINGS, 10)
-#define UI_MENU_DELTA_SETTINGS {UI_MENU_ADDCONDBACK &ui_menu_set_endstop_offset,&ui_menu_delta_rod,&ui_menu_delta_radius,&ui_menu_x_endstop_offset,&ui_menu_y_endstop_offset,&ui_menu_z_endstop_offset}
-UI_MENU(ui_menu_delta_settings, UI_MENU_DELTA_SETTINGS, 7)
-
-//after code add by xky  ABOUT ADJUST RADIUS MENU
-UI_MENU_ACTIONCOMMAND(ui_menu_move_x_positive,"X Move Positive",UI_ACTION_TestRadiusMoveToXPositiveDirection)
-UI_MENU_ACTIONCOMMAND(ui_menu_move_x_nagetive,"X Move Nagetive",UI_ACTION_TestRadiusMoveToXNegativeDirection)
-UI_MENU_ACTIONCOMMAND(ui_menu_move_x_center,"X Move Center",UI_ACTION_TestRadiusMoveToXCenter)
-UI_MENU_ACTIONCOMMAND(ui_menu_move_y_positive,"Y Move Position",UI_ACTION_TestRadiusMoveToYPositiveDirection)
-UI_MENU_ACTIONCOMMAND(ui_menu_move_y_nagetive,"Y Move Nagetive",UI_ACTION_TestRadiusMoveToYNegativeDirection)
-UI_MENU_ACTIONCOMMAND(ui_menu_move_y_center,"Y Move Center",UI_ACTION_TestRadiusMoveToYCenter )
-#define UI_MENU_ADJUST_RADIUS {UI_MENU_ADDCONDBACK &ui_menu_move_x_positive,&ui_menu_move_x_nagetive,&ui_menu_move_x_center,&ui_menu_move_y_positive,&ui_menu_move_y_nagetive,&ui_menu_move_y_center}
-UI_MENU(ui_menu_adjust_radius, UI_MENU_ADJUST_RADIUS, 7)
-
 // **** Configuration menu
 
 UI_MENU_SUBMENU_T(ui_menu_conf_general, UI_TEXT_GENERAL_ID,      ui_menu_general)
 UI_MENU_SUBMENU_T(ui_menu_conf_accel,   UI_TEXT_ACCELERATION_ID, ui_menu_accel)
 UI_MENU_SUBMENU_T(ui_menu_conf_feed,    UI_TEXT_FEEDRATE_ID,     ui_menu_feedrate)
 UI_MENU_SUBMENU_T(ui_menu_conf_extr,    UI_TEXT_EXTRUDER_ID,     ui_menu_cextr)
-
-//after code add by xky
-UI_MENU_SUBMENU(ui_menu_conf_debug,    UI_TEXT_DEBUGGING,     ui_menu_debugging)
-UI_MENU_SUBMENU(ui_menu_conf_adjust_radius, "Adjust Radius", ui_menu_adjust_radius)
-UI_MENU_SUBMENU(ui_menu_conf_delta_settings, "Delta Settings", ui_menu_delta_settings)
 
 #if HAVE_HEATED_BED
  UI_MENU_SUBMENU_T(ui_menu_conf_bed,    UI_TEXT_HEATING_BED_ID,  ui_menu_bedconf)
@@ -981,8 +943,8 @@ UI_MENU_SUBMENU_T(ui_menu_conf_delta, UI_TEXT_ZCALIB_ID, ui_menu_delta)
 #define UI_MENU_DELTA_COND
 #define UI_MENU_DELTA_CNT 0
 #endif
-#define UI_MENU_CONFIGURATION {UI_MENU_ADDCONDBACK &ui_menu_conf_general LANGMENU_ENTRY ,&ui_menu_conf_accel,&ui_menu_conf_feed,&ui_menu_conf_extr UI_MENU_BEDCONF_COND UI_MENU_EEPROM_COND UI_MENU_DELTA_COND UI_MENU_SL_COND}
-UI_MENU(ui_menu_configuration,UI_MENU_CONFIGURATION,UI_MENU_BACKCNT+LANGMENU_COUNT+UI_MENU_EEPROM_CNT+UI_MENU_BEDCONF_CNT+UI_MENU_DELTA_CNT+UI_MENU_SL_CNT+4)
+#define UI_MENU_CONFIGURATION {UI_MENU_ADDCONDBACK &ui_menu_conf_general LANGMENU_ENTRY ,&ui_menu_conf_accel,&ui_menu_conf_feed,&ui_menu_conf_extr,&ui_menu_conf_delta_settings UI_MENU_BEDCONF_COND UI_MENU_EEPROM_COND UI_MENU_DELTA_COND UI_MENU_SL_COND}
+UI_MENU(ui_menu_configuration,UI_MENU_CONFIGURATION,UI_MENU_BACKCNT+LANGMENU_COUNT+UI_MENU_EEPROM_CNT+UI_MENU_BEDCONF_CNT+UI_MENU_DELTA_CNT+UI_MENU_SL_CNT+5)
 // Main menu
 UI_MENU_SUBMENU_T(ui_menu_main1, UI_TEXT_QUICK_SETTINGS_ID,ui_menu_quick)
 UI_MENU_SUBMENU_T(ui_menu_main2, UI_TEXT_POSITION_ID,ui_menu_positions)
@@ -990,7 +952,7 @@ UI_MENU_SUBMENU_T(ui_menu_main3, UI_TEXT_EXTRUDER_ID,ui_menu_extruder)
 UI_MENU_SUBMENU_T(ui_menu_main4, UI_TEXT_DEBUGGING_ID,ui_menu_debugging)
 UI_MENU_SUBMENU_T(ui_menu_main5, UI_TEXT_CONFIGURATION_ID,ui_menu_configuration)
 UI_MENU_SUBMENU(ui_menu_main6, UI_TEXT_AUTO_LEVEING,ui_menu_autoleveing)             //this submenu add by xky  function about auto leveing
-#define UI_MENU_MAIN {UI_MENU_ADDCONDBACK  &ui_menu_main1,SD_PRINTFILE_ENTRY &ui_menu_main2,&ui_menu_main3,UI_MENU_FAN_COND UI_MENU_COATING_COND UI_MENU_SD_COND &ui_menu_main4,&ui_menu_main5,&ui_menu_main6}
+#define UI_MENU_MAIN {UI_MENU_ADDCONDBACK  &ui_menu_main6,&ui_menu_main1,SD_PRINTFILE_ENTRY &ui_menu_main2,&ui_menu_main3,UI_MENU_FAN_COND UI_MENU_COATING_COND UI_MENU_SD_COND &ui_menu_main4,&ui_menu_main5}
 UI_MENU(ui_menu_main,UI_MENU_MAIN,5+UI_MENU_BACKCNT+UI_MENU_SD_CNT+UI_MENU_FAN_CNT+SD_PRINTFILE_ENTRY_CNT+UI_MENU_COATING_CNT+UI_MENU_AUTO_LEVEING_CNT)
 
 /* Define menus accessible by action commands
