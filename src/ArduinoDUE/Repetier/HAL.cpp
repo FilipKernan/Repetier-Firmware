@@ -36,6 +36,7 @@ extern long bresenham_step();
 #if ANALOG_INPUTS > 0
 int32_t osAnalogInputBuildup[ANALOG_INPUTS];
 int32_t osAnalogSamples[ANALOG_INPUTS][ANALOG_INPUT_MEDIAN];
+int32_t osAnalogSamplesSum[ANALOG_INPUTS];
 static int32_t adcSamplesMin[ANALOG_INPUTS];
 static int32_t adcSamplesMax[ANALOG_INPUTS];
 static int adcCounter = 0, adcSamplePos = 0;
@@ -44,6 +45,7 @@ static int adcCounter = 0, adcSamplePos = 0;
 static   uint32_t  adcEnable = 0;
 
 char HAL::virtualEeprom[EEPROM_BYTES];
+bool HAL::wdPinged = true;
 volatile uint8_t HAL::insideTimer1 = 0;
 #ifndef DUE_SOFTWARE_SPI
 int spiDueDividors[] = {10, 21, 42, 84, 168, 255, 255};
@@ -94,7 +96,7 @@ void HAL::setupTimer() {
   // Regular interrupts for heater control etc
   pmc_enable_periph_clk(PWM_TIMER_IRQ);
   //NVIC_SetPriority((IRQn_Type)PWM_TIMER_IRQ, NVIC_EncodePriority(4, 6, 0));
-  NVIC_SetPriority((IRQn_Type)PWM_TIMER_IRQ, 10);
+  NVIC_SetPriority((IRQn_Type)PWM_TIMER_IRQ, 15);
 
   TC_FindMckDivisor(PWM_CLOCK_FREQ, F_CPU_TRUE, &tc_count, &tc_clock, F_CPU_TRUE);
   TC_Configure(PWM_TIMER, PWM_TIMER_CHANNEL, TC_CMR_WAVSEL_UP_RC | TC_CMR_WAVE | tc_clock);
@@ -185,6 +187,7 @@ void HAL::analogStart(void)
     adcSamplesMin[i] = 100000;
     adcSamplesMax[i] = 0;
     adcEnable |= (0x1u << osAnalogInputChannels[i]);
+    osAnalogSamplesSum[i] = 2048 * ANALOG_INPUT_MEDIAN;
     for (int j = 0; j < ANALOG_INPUT_MEDIAN; j++)
       osAnalogSamples[i][j] = 2048; // we want to prevent early error from bad starting values
   }
@@ -500,14 +503,18 @@ void HAL::i2cInit(unsigned long clockSpeedHz)
   pmc_enable_periph_clk(TWI_ID);
 
   // Configure pins
+#if SDA_PIN >= 0
   PIO_Configure(g_APinDescription[SDA_PIN].pPort,
                 g_APinDescription[SDA_PIN].ulPinType,
                 g_APinDescription[SDA_PIN].ulPin,
                 g_APinDescription[SDA_PIN].ulPinConfiguration);
+#endif
+#if SCL_PIN >= 0
   PIO_Configure(g_APinDescription[SCL_PIN].pPort,
                 g_APinDescription[SCL_PIN].ulPinType,
                 g_APinDescription[SCL_PIN].ulPin,
                 g_APinDescription[SCL_PIN].ulPinConfiguration);
+#endif
 
   // Set to Master mode with known state
   TWI_INTERFACE->TWI_CR = TWI_CR_SVEN;
@@ -589,6 +596,7 @@ void HAL::i2cStartWait(unsigned char address_and_direction)
 *************************************************************************/
 void HAL::i2cStartAddr(unsigned char address_and_direction, unsigned int pos)
 {
+#if EEPROM_AVAILABLE == EEPROM_I2C
   uint32_t twiDirection = address_and_direction & 1;
   uint32_t address = address_and_direction >> 1;
 
@@ -607,6 +615,7 @@ void HAL::i2cStartAddr(unsigned char address_and_direction, unsigned int pos)
   // write internal address register
   TWI_INTERFACE->TWI_IADR = 0;
   TWI_INTERFACE->TWI_IADR = TWI_IADR_IADR(pos);
+#endif  
 }
 
 /*************************************************************************
@@ -918,7 +927,7 @@ pwm values for heater and some other frequent jobs.
 */
 void PWM_TIMER_VECTOR ()
 {
-  InterruptProtectedBlock noInt;
+  //InterruptProtectedBlock noInt;
   // apparently have to read status register
   TC_GetStatus(PWM_TIMER, PWM_TIMER_CHANNEL);
 
@@ -1096,7 +1105,7 @@ void PWM_TIMER_VECTOR ()
   if (pwm_pos_set[NUM_EXTRUDER] == pwm_count_heater && pwm_pos_set[NUM_EXTRUDER] != HEATER_PWM_MASK) WRITE(HEATED_BED_HEATER_PIN, HEATER_PINS_INVERTED);
 #endif
 #endif
-  HAL::allowInterrupts();
+  //noInt.unprotect();
   counterPeriodical++; // Appxoimate a 100ms timer
   if (counterPeriodical >= 390) //  (int)(F_CPU/40960))
   {
@@ -1115,17 +1124,15 @@ void PWM_TIMER_VECTOR ()
       osAnalogInputBuildup[i] += cur;
       adcSamplesMin[i] = RMath::min(adcSamplesMin[i], cur);
       adcSamplesMax[i] = RMath::max(adcSamplesMax[i], cur);
-      if (adcCounter >= NUM_ADC_SAMPLES)
+      if (adcCounter >= NUM_ADC_SAMPLES)     // store new conversion result
       {
         // Strip biggest and smallest value and round correctly
         osAnalogInputBuildup[i] = osAnalogInputBuildup[i] + (1 << (ANALOG_INPUT_SAMPLE - 1)) - (adcSamplesMin[i] + adcSamplesMax[i]);
         adcSamplesMin[i] = 100000;
         adcSamplesMax[i] = 0;
-        osAnalogSamples[i][adcSamplePos] = osAnalogInputBuildup[i] >> ANALOG_INPUT_SAMPLE;
-        int sum = 0;
-        for (int j = 0; j < ANALOG_INPUT_MEDIAN; j++)
-          sum += osAnalogSamples[i][j];
-        osAnalogInputValues[i] = sum / ANALOG_INPUT_MEDIAN;
+        osAnalogSamplesSum[i] -= osAnalogSamples[i][adcSamplePos];
+        osAnalogSamplesSum[i] += (osAnalogSamples[i][adcSamplePos] = osAnalogInputBuildup[i] >> ANALOG_INPUT_SAMPLE);
+        osAnalogInputValues[i] = osAnalogSamplesSum[i] / ANALOG_INPUT_MEDIAN;
         osAnalogInputBuildup[i] = 0;
       } // adcCounter >= NUM_ADC_SAMPLES
     } // for i
@@ -1138,11 +1145,16 @@ void PWM_TIMER_VECTOR ()
     ADC->ADC_CR = ADC_CR_START; // reread values
   }
 #endif // ANALOG_INPUTS > 0
-  UI_FAST; // Short timed user interface action
   pwm_count_cooler += COOLER_PWM_STEP;
   pwm_count_heater += HEATER_PWM_STEP;
+  UI_FAST; // Short timed user interface action
+#if FEATURE_WATCHDOG
+  if(HAL::wdPinged) {
+     WDT->WDT_CR = 0xA5000001;
+     HAL::wdPinged = false;
+  }
+#endif
 }
-
 
 /** \brief Timer routine for extruder stepper.
 
@@ -1176,14 +1188,14 @@ void EXTRUDER_TIMER_VECTOR ()
   if (!Printer::isAdvanceActivated()) {
     return; // currently no need
   }
-
   if (!Printer::isAdvanceActivated()) return; // currently no need
   if (Printer::extruderStepsNeeded > 0 && extruderLastDirection != 1)
   {
     if(Printer::extruderStepsNeeded >= ADVANCE_DIR_FILTER_STEPS) {
       Extruder::setDirection(true);
       extruderLastDirection = 1;
-      extruderChannel->TC_RC = SLOW_EXTRUDER_TICKS;
+      //extruderChannel->TC_RC = SLOW_EXTRUDER_TICKS;
+      extruderChannel->TC_RC = Printer::maxExtruderSpeed;
     } else { 
       extruderChannel->TC_RC = Printer::maxExtruderSpeed;
     }
@@ -1193,11 +1205,13 @@ void EXTRUDER_TIMER_VECTOR ()
     if(-Printer::extruderStepsNeeded >= ADVANCE_DIR_FILTER_STEPS) {
       Extruder::setDirection(false);
       extruderLastDirection = -1;
-      extruderChannel->TC_RC = SLOW_EXTRUDER_TICKS;
+      //extruderChannel->TC_RC = SLOW_EXTRUDER_TICKS;
+      extruderChannel->TC_RC = Printer::maxExtruderSpeed;
    } else { 
       extruderChannel->TC_RC = Printer::maxExtruderSpeed;
    }
-  } else if (Printer::extruderStepsNeeded != 0)
+  } 
+  else if (Printer::extruderStepsNeeded != 0)
   {
     Extruder::step();
     Printer::extruderStepsNeeded -= extruderLastDirection;
