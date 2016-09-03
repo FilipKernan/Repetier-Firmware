@@ -1092,13 +1092,13 @@ void Commands::processGCode(GCode *com)
         Printer::coordinateOffset[X_AXIS] = Printer::coordinateOffset[Y_AXIS] = Printer::coordinateOffset[Z_AXIS] = 0;
         float h1,h2,h3,hc,oldFeedrate = Printer::feedrate;
         Printer::moveTo(EEPROM::zProbeX1(),EEPROM::zProbeY1(),IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-        h1 = Printer::runZProbe(true,false,Z_PROBE_REPETITIONS,false) - EEPROM::zProbeP1Offset();
+        h1 = Printer::runZProbe(true,false,Z_PROBE_REPETITIONS,false);
         if(h1 < -1) break;
         Printer::moveTo(EEPROM::zProbeX2(),EEPROM::zProbeY2(),IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-        h2 = Printer::runZProbe(false,false) - EEPROM::zProbeP2Offset();
+        h2 = Printer::runZProbe(false,false);
         if(h2 < -1) break;
         Printer::moveTo(EEPROM::zProbeX3(),EEPROM::zProbeY3(),IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-        h3 = Printer::runZProbe(false,true) - EEPROM::zProbeP3Offset();
+        h3 = Printer::runZProbe(false,true);
         if(h3 < -1) break;
         // Zprobe with force feedback may bed bed differently for different points.
         // these settings allow correction of the bending distance so leveling is correct afterwards.

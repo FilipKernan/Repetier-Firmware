@@ -1348,13 +1348,6 @@ void UIDisplay::parse(const char *txt,bool ram)
             break;
         case 'O': // ops related stuff
             break;
-
-		case 'p': // add by xky 
-			if(c2 == '1') addFloat(EEPROM::zProbeP1Offset(), 2, 2);       //liang wei xiao shu
-			else if(c2 == '2') addFloat(EEPROM::zProbeP2Offset(), 2, 2);
-			else if(c2 == '3') addFloat(EEPROM::zProbeP3Offset(), 2, 2);
-            break;
-
         case 'l':
             if(c2 == 'a') addInt(lastAction,4);
 #if defined(CASE_LIGHTS_PIN) && CASE_LIGHTS_PIN >= 0
@@ -2811,30 +2804,6 @@ ZPOS2:
 		EEPROM::setDeltaTowerZOffsetSteps(e);
         Com::printFLN(PSTR("Z Endstop Offset: "),e,3);
 		Printer::updateDerivedParameter();
-		break;
-
-	case UI_ACTION_P1_OFFSET:      //add by xky  p1 offset
-		float F;
-		F = EEPROM::zProbeP1Offset();
-		INCREMENT_MIN_MAX(F,0.01,-9,9);
-		EEPROM::setzProbeP1Offset(F);
-        Com::printFLN(PSTR("Set P1 Offset: "),F,3);
-		break;
-
-	case UI_ACTION_P2_OFFSET:      //add by xky  p2 offset
-		float G;
-		G = EEPROM::zProbeP2Offset();
-		INCREMENT_MIN_MAX(G,0.01,-9,9);
-		EEPROM::setzProbeP2Offset(G);
-        Com::printFLN(PSTR("Set P2 Offset: "),G,3);
-		break;
-
-	case UI_ACTION_P3_OFFSET:      //add by xky  p3 offset
-		float H;
-		H = EEPROM::zProbeP3Offset();
-		INCREMENT_MIN_MAX(H,0.01,-9,9);
-		EEPROM::setzProbeP3Offset(H);
-        Com::printFLN(PSTR("Set P3 Offset: "),H,3);
 		break;
 	//up code add by xky
 

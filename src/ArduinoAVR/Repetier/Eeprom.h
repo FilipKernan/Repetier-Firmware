@@ -123,11 +123,6 @@ have problems with other modules using the eeprom */
 #define EPR_AUTORETRACT_ENABLED               1020
 #define EPR_Z_PROBE_Z_OFFSET			      1024
 
-//add by xky
-#define EPR_Z_PROBE_P1_OFFSET 1024
-#define EPR_Z_PROBE_P2_OFFSET 1028
-#define EPR_Z_PROBE_P3_OFFSET 1032
-
 #if EEPROM_MODE != 0
 #define EEPROM_FLOAT(x) HAL::eprGetFloat(EPR_##x)
 #define EEPROM_INT32(x) HAL::eprGetInt32(EPR_##x)
@@ -287,30 +282,6 @@ public:
 #endif
     }
 
-	//THIS CODE ADD BY XKY
-	    static inline float zProbeP1Offset() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_Z_PROBE_P1_OFFSET);
-#else
-        return Z_PROBE_P1_OFFSET;
-#endif
-    }
-		    static inline float zProbeP2Offset() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_Z_PROBE_P2_OFFSET);
-#else
-        return Z_PROBE_P2_OFFSET;
-#endif
-    }
-			    static inline float zProbeP3Offset() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_Z_PROBE_P3_OFFSET);
-#else
-        return Z_PROBE_P3_OFFSET;
-#endif
-    }
-  //UP CODE ADD BY XKY
-
     static inline float axisCompTanXY() {
 #if EEPROM_MODE != 0
         return HAL::eprGetFloat(EPR_AXISCOMP_TANXY);
@@ -469,36 +440,6 @@ static inline void setTowerZFloor(float newZ) {
             HAL::eprSetByte(EPR_INTEGRITY_BYTE,newcheck);
 #endif
     }
-
-	// after code add by xky
-static inline void setzProbeP1Offset(float mm) {
-      Com::printFLN(PSTR("P1 Offset set to: "), mm, 3);
-#if EEPROM_MODE != 0
-      HAL::eprSetFloat(EPR_Z_PROBE_P1_OFFSET,mm);
-      uint8_t newcheck = computeChecksum();
-      if(newcheck != HAL::eprGetByte(EPR_INTEGRITY_BYTE))
-        HAL::eprSetByte(EPR_INTEGRITY_BYTE,newcheck);
-#endif
-    }
-static inline void setzProbeP2Offset(float mm) {
-      Com::printFLN(PSTR("P2 Offset set to: "), mm, 3);
-#if EEPROM_MODE != 0
-      HAL::eprSetFloat(EPR_Z_PROBE_P2_OFFSET,mm);
-      uint8_t newcheck = computeChecksum();
-      if(newcheck != HAL::eprGetByte(EPR_INTEGRITY_BYTE))
-        HAL::eprSetByte(EPR_INTEGRITY_BYTE,newcheck);
-#endif
-    }
-static inline void setzProbeP3Offset(float mm) {
-      Com::printFLN(PSTR("P3 Offset set to: "), mm, 3);
-#if EEPROM_MODE != 0
-      HAL::eprSetFloat(EPR_Z_PROBE_P3_OFFSET,mm);
-      uint8_t newcheck = computeChecksum();
-      if(newcheck != HAL::eprGetByte(EPR_INTEGRITY_BYTE))
-        HAL::eprSetByte(EPR_INTEGRITY_BYTE,newcheck);
-#endif
-    }
-//up code add by xky
 
     static inline float deltaAlphaA() {
 #if EEPROM_MODE != 0

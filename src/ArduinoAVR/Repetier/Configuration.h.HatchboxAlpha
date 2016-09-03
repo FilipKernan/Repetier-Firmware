@@ -387,12 +387,6 @@ WARNING: Servos can draw a considerable amount of current. Make sure your system
 #define Z_PROBE_X3 0
 #define Z_PROBE_Y3 135
 
-
-//add by xky
-#define Z_PROBE_P1_OFFSET 0
-#define Z_PROBE_P2_OFFSET 0
-#define Z_PROBE_P3_OFFSET 0
-
 #define FEATURE_AXISCOMP 0
 #define AXISCOMP_TANXY 0
 #define AXISCOMP_TANYZ 0

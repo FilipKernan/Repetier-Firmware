@@ -461,11 +461,6 @@ void EEPROM::initalizeUncached()
     HAL::eprSetFloat(EPR_Z_PROBE_X3,Z_PROBE_X3);
     HAL::eprSetFloat(EPR_Z_PROBE_Y3,Z_PROBE_Y3);
 
-	//THIS CODE ADD BY XKY
-	HAL::eprSetFloat(EPR_Z_PROBE_P1_OFFSET,Z_PROBE_P1_OFFSET);
-	HAL::eprSetFloat(EPR_Z_PROBE_P2_OFFSET,Z_PROBE_P2_OFFSET);
-	HAL::eprSetFloat(EPR_Z_PROBE_P3_OFFSET,Z_PROBE_P3_OFFSET);
-
     HAL::eprSetFloat(EPR_AXISCOMP_TANXY,AXISCOMP_TANXY);
     HAL::eprSetFloat(EPR_AXISCOMP_TANYZ,AXISCOMP_TANYZ);
     HAL::eprSetFloat(EPR_AXISCOMP_TANXZ,AXISCOMP_TANXZ);
@@ -648,11 +643,6 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
             HAL::eprSetFloat(EPR_Z_PROBE_Y2,Z_PROBE_Y2);
             HAL::eprSetFloat(EPR_Z_PROBE_X3,Z_PROBE_X3);
             HAL::eprSetFloat(EPR_Z_PROBE_Y3,Z_PROBE_Y3);
-
-			//THIS CODE ADD BY XKY
-	        HAL::eprSetFloat(EPR_Z_PROBE_P1_OFFSET,Z_PROBE_P1_OFFSET);
-	        HAL::eprSetFloat(EPR_Z_PROBE_P2_OFFSET,Z_PROBE_P2_OFFSET);
-	        HAL::eprSetFloat(EPR_Z_PROBE_P3_OFFSET,Z_PROBE_P3_OFFSET);
         }
         if(version < 4)
         {
@@ -877,11 +867,6 @@ void EEPROM::writeSettings()
     writeInt(EPR_DELTA_TOWERX_OFFSET_STEPS, Com::tEPRTowerXOffset);
     writeInt(EPR_DELTA_TOWERY_OFFSET_STEPS, Com::tEPRTowerYOffset);
     writeInt(EPR_DELTA_TOWERZ_OFFSET_STEPS, Com::tEPRTowerZOffset);
-
-	// ADD BY XKY 
-	writeFloat(EPR_Z_PROBE_P1_OFFSET, Com::tEPRZProbeP1Offset);
-	writeFloat(EPR_Z_PROBE_P2_OFFSET, Com::tEPRZProbeP2Offset);
-	writeFloat(EPR_Z_PROBE_P3_OFFSET, Com::tEPRZProbeP3Offset);
 
     writeFloat(EPR_DELTA_ALPHA_A, Com::tDeltaAlphaA);
     writeFloat(EPR_DELTA_ALPHA_B, Com::tDeltaAlphaB);
