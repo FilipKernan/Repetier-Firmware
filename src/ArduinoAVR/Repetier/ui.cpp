@@ -916,15 +916,18 @@ void UIDisplay::initialize()
     u8g_FirstPage(&u8g);
     do
     {
-        // u8g_DrawBitmapP(&u8g, 128 - LOGO_WIDTH, 0, ((LOGO_WIDTH + 8) / 8), LOGO_HEIGHT, logo);  //xky delete this code
+        u8g_DrawBitmapP(&u8g, 128 - LOGO_WIDTH, 0, ((LOGO_WIDTH + 7) / 8), LOGO_HEIGHT, logo);
         for(uint8_t y = 0; y < UI_ROWS; y++) displayCache[y][0] = 0;
-		//after code edit by xky
-        //printRowP(0, PSTR("Repetier"));
-	printRowP(0, PSTR("lxfieware"));
+#ifdef CUSTOM_LOGO
+        printRowP(4, PSTR("Repetier"));
+        printRowP(5, PSTR("Ver " REPETIER_VERSION));
+#else
+        printRowP(0, PSTR("Repetier"));
         printRowP(1, PSTR("Ver " REPETIER_VERSION));
         printRowP(3, PSTR("Machine:"));
         printRowP(4, PSTR(UI_PRINTER_NAME));
         printRowP(5, PSTR(UI_PRINTER_COMPANY));
+#endif
     }
     while( u8g_NextPage(&u8g) );  //end picture loop
 #else // not DISPLAY_U8G
@@ -1242,7 +1245,7 @@ void UIDisplay::parse(const char *txt,bool ram)
             if(c2 >= 'x' && c2 <= 'z')       addFloat(Printer::maxAccelerationMMPerSquareSecond[c2 - 'x'], 5, 0);
             else if(c2 >= 'X' &&  c2 <= 'Z') addFloat(Printer::maxTravelAccelerationMMPerSquareSecond[c2-'X'], 5, 0);
             else if(c2 == 'j') addFloat(Printer::maxJerk, 3, 1);
-#if DRIVE_SYSTEM!=DELTA
+#if DRIVE_SYSTEM != DELTA
             else if(c2 == 'J') addFloat(Printer::maxZJerk, 3, 1);
 #endif
 			//after code add by xky
@@ -1261,7 +1264,14 @@ void UIDisplay::parse(const char *txt,bool ram)
             else if(c2 == 'e') addStringOnOff(Printer::debugErrors());
             else if(c2 == 'd') addStringOnOff(Printer::debugDryrun());
             break;
-
+        case 'D':
+#if FEATURE_DITTO_PRINTING
+            if(c2>='0' && c2<='9')
+            {
+                addStringP(Extruder::dittoMode==c2-'0'?ui_selected:ui_unselected);
+            }
+#endif
+            break;
         case 'e': // Extruder temperature
         {
             if(c2 == 'I')
@@ -1277,9 +1287,16 @@ void UIDisplay::parse(const char *txt,bool ram)
                 addStringP(Printer::relativeExtruderCoordinateMode ? Com::translatedF(UI_TEXT_YES_ID) : Com::translatedF(UI_TEXT_NO_ID));
                 break;
             }
+#if FEATURE_DITTO_PRINTING
+            if(c2 == 'd') { // ditto copy mode
+                addInt(Extruder::dittoMode,1,' ');
+                break;
+            }
+#endif
             uint8_t eid = NUM_EXTRUDER;    // default = BED if c2 not specified extruder number
             if(c2 == 'c') eid = Extruder::current->id;
             else if(c2 >= '0' && c2 <= '9') eid = c2 - '0';
+#if NUM_TEMPERATURE_LOOPS > 0
             if(Printer::isAnyTempsensorDefect())
             {
                 if(eid == 0 && ++beepdelay > 30) beepdelay = 0; // beep every 30 seconds
@@ -1303,6 +1320,7 @@ void UIDisplay::parse(const char *txt,bool ram)
                 addStringP(PSTR(" jam "));
                 break;
             }
+#endif
 #endif
             if(c2 == 'c') fvalue = Extruder::current->tempControl.currentTemperatureC;
             else if(c2 >= '0' && c2 <= '9') fvalue=extruder[c2 - '0'].tempControl.currentTemperatureC;
@@ -1487,12 +1505,11 @@ void UIDisplay::parse(const char *txt,bool ram)
             {
 #if EEPROM_MODE
                 bool alloff = true;
+#if NUM_TEMPERATURE_LOOPS > 0
                 for(uint8_t i = 0; i < NUM_EXTRUDER; i++)
                     if(tempController[i]->targetTemperatureC > 15) alloff = false;
-
-                //long seconds = (alloff ? 0 : (HAL::timeInMilliseconds() - Printer::msecondsPrinting) / 1000) + HAL::eprGetInt32(EPR_PRINTING_TIME);
-				//XKY EDIT IT 
-				long seconds = (alloff ? 0 : (HAL::timeInMilliseconds() - Printer::msecondsPrinting) / 1000);
+#endif
+                long seconds = (alloff ? 0 : (HAL::timeInMilliseconds() - Printer::msecondsPrinting) / 1000) + HAL::eprGetInt32(EPR_PRINTING_TIME);
                 long tmp = seconds / 86400;
                 seconds -= tmp * 86400;
                 addInt(tmp, 5);
@@ -1632,9 +1649,17 @@ void UIDisplay::parse(const char *txt,bool ram)
 #endif
             break;
         case 'y':
-#if DRIVE_SYSTEM==DELTA
-            if(c2>='0' && c2<='3') fvalue = (float)Printer::currentDeltaPositionSteps[c2-'0']*Printer::invAxisStepsPerMM[c2-'0'];
+#if DRIVE_SYSTEM == DELTA
+            if(c2 >= '0' && c2 <= '3') fvalue = (float)Printer::currentDeltaPositionSteps[c2 - '0']*Printer::invAxisStepsPerMM[c2-'0'];
             addFloat(fvalue,3,2);
+#endif
+            break;
+        case 'z':
+#if EEPROM_MODE != 0 && FEATURE_Z_PROBE
+            if(c2 == 'h') { // write z probe height
+                addFloat(EEPROM::zProbeHeight(),3,2);
+                break;
+            }
 #endif
             break;
         }
@@ -1642,7 +1667,9 @@ void UIDisplay::parse(const char *txt,bool ram)
     uid.printCols[col] = 0;
 }
 void UIDisplay::showLanguageSelectionWizard() {
+#if EEPROM_MODE != 0
     pushMenu(&ui_menu_languages_wiz,true);
+#endif
 }
 void UIDisplay::setStatusP(PGM_P txt,bool error)
 {
@@ -1978,20 +2005,24 @@ void UIDisplay::refreshPage()
         if(menuLevel == 0 && menuPos[0] == 0 ) // Main menu with special graphics
         {
 //ext1 and ext2 animation symbols
-            if(pwm_pos[extruder[0].tempControl.pwmIndex] > 0)
+#if NUM_EXTRUDER < 3
+            if(extruder[0].tempControl.targetTemperatureC > 30)
+#else
+            if(Extruder::current->tempControl.targetTemperatureC > 30)
+#endif
                 cache[0][0] = Printer::isAnimation()?'\x08':'\x09';
             else
                 cache[0][0] = '\x0a'; //off
-#if NUM_EXTRUDER>1
-            if(pwm_pos[extruder[1].tempControl.pwmIndex] > 0)
+#if NUM_EXTRUDER == 2 && MIXING_EXTRUDER == 0
+            if(extruder[1].tempControl.targetTemperatureC > 30)
                 cache[1][0] = Printer::isAnimation()?'\x08':'\x09';
             else
                 cache[1][0] = '\x0a'; //off
 #endif
 #if HAVE_HEATED_BED
             //heatbed animated icons
-            uint8_t lin = 2 - ((NUM_EXTRUDER < 2) ? 1 : 0);
-            if(pwm_pos[heatedBedController.pwmIndex] > 0)
+            uint8_t lin = 2 - ((NUM_EXTRUDER != 2) ? 1 : 0);
+            if(heatedBedController.targetTemperatureC > 30)
                 cache[lin][0] = Printer::isAnimation() ? '\x0c' : '\x0d';
             else
                 cache[lin][0] = '\x0b';
@@ -2697,13 +2728,22 @@ ZPOS2:
 #endif
     break;
 
-#if NUM_EXTRUDER>2
-    case UI_ACTION_EXTRUDER2_TEMP:
-#endif
-#if NUM_EXTRUDER>1
+    case UI_ACTION_EXTRUDER0_TEMP:
+#if NUM_EXTRUDER > 1
     case UI_ACTION_EXTRUDER1_TEMP:
 #endif
-    case UI_ACTION_EXTRUDER0_TEMP:
+#if NUM_EXTRUDER > 2
+    case UI_ACTION_EXTRUDER2_TEMP:
+#endif
+#if NUM_EXTRUDER > 3
+    case UI_ACTION_EXTRUDER3_TEMP:
+#endif
+#if NUM_EXTRUDER > 4
+    case UI_ACTION_EXTRUDER4_TEMP:
+#endif
+#if NUM_EXTRUDER > 5
+    case UI_ACTION_EXTRUDER5_TEMP:
+#endif
     {
         int tmp = (int)extruder[action - UI_ACTION_EXTRUDER0_TEMP].tempControl.targetTemperatureC;
         if(tmp < UI_SET_MIN_EXTRUDER_TEMP) tmp = 0;
@@ -3111,13 +3151,8 @@ int UIDisplay::executeAction(int action, bool allowMoves)
             Printer::debugLevel ^= 8;
             if(Printer::debugDryrun())   // simulate movements without printing
             {
-                Extruder::setTemperatureForExtruder(0, 0);
-#if NUM_EXTRUDER > 1
-                Extruder::setTemperatureForExtruder(0, 1);
-#endif
-#if NUM_EXTRUDER > 2
-                Extruder::setTemperatureForExtruder(0, 2);
-#endif
+                for(int i = 0;i < NUM_EXTRUDER; i++)
+                    Extruder::setTemperatureForExtruder(0, i);
 #if HAVE_HEATED_BED
                 Extruder::setHeatedBedTemperature(0);
 #endif
@@ -3165,13 +3200,8 @@ int UIDisplay::executeAction(int action, bool allowMoves)
             break;
         case UI_ACTION_COOLDOWN:
             UI_STATUS_F(Com::translatedF(UI_TEXT_COOLDOWN_ID));
-            Extruder::setTemperatureForExtruder(0, 0);
-#if NUM_EXTRUDER > 1
-            Extruder::setTemperatureForExtruder(0, 1);
-#endif
-#if NUM_EXTRUDER > 2
-            Extruder::setTemperatureForExtruder(0, 2);
-#endif
+            for(int i = 0;i < NUM_EXTRUDER; i++)
+                Extruder::setTemperatureForExtruder(0, i);
 #if HAVE_HEATED_BED
             Extruder::setHeatedBedTemperature(0);
 #endif
@@ -3185,8 +3215,17 @@ int UIDisplay::executeAction(int action, bool allowMoves)
 #if NUM_EXTRUDER > 1
         case UI_ACTION_EXTRUDER1_OFF:
 #endif
-#if NUM_EXTRUDER>2
+#if NUM_EXTRUDER > 2
         case UI_ACTION_EXTRUDER2_OFF:
+#endif
+#if NUM_EXTRUDER > 3
+        case UI_ACTION_EXTRUDER3_OFF:
+#endif
+#if NUM_EXTRUDER > 4
+        case UI_ACTION_EXTRUDER4_OFF:
+#endif
+#if NUM_EXTRUDER > 5
+        case UI_ACTION_EXTRUDER5_OFF:
 #endif
             Extruder::setTemperatureForExtruder(0, action - UI_ACTION_EXTRUDER0_OFF);
             break;
@@ -3206,12 +3245,29 @@ int UIDisplay::executeAction(int action, bool allowMoves)
 #if NUM_EXTRUDER > 2
         case UI_ACTION_SELECT_EXTRUDER2:
 #endif
+#if NUM_EXTRUDER > 3
+        case UI_ACTION_SELECT_EXTRUDER3:
+#endif
+#if NUM_EXTRUDER > 4
+        case UI_ACTION_SELECT_EXTRUDER4:
+#endif
+#if NUM_EXTRUDER > 5
+        case UI_ACTION_SELECT_EXTRUDER5:
+#endif
             if(!allowMoves) return action;
             Extruder::selectExtruderById(action - UI_ACTION_SELECT_EXTRUDER0);
             currHeaterForSetup = &(Extruder::current->tempControl);
             Printer::setMenuMode(MENU_MODE_FULL_PID, currHeaterForSetup->heatManager == 1);
             Printer::setMenuMode(MENU_MODE_DEADTIME, currHeaterForSetup->heatManager == 3);
             break;
+#if FEATURE_DITTO_PRINTING
+        case UI_DITTO_0:
+        case UI_DITTO_1:
+        case UI_DITTO_2:
+        case UI_DITTO_3:
+            Extruder::dittoMode = action - UI_DITTO_0;
+            break;
+#endif
 #if EEPROM_MODE != 0
         case UI_ACTION_STORE_EEPROM:
             EEPROM::storeDataIntoEEPROM(false);

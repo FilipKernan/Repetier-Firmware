@@ -68,6 +68,7 @@ void Extruder::manageTemperatures()
     uint8_t errorDetected = 0;
     bool hot = false;
     millis_t time = HAL::timeInMilliseconds(); // compare time for decouple tests
+#if NUM_TEMPERATURE_LOOPS > 0
     for(uint8_t controller = 0; controller < NUM_TEMPERATURE_LOOPS; controller++)
     {
         TemperatureController *act = tempController[controller];
@@ -295,6 +296,8 @@ void Extruder::manageTemperatures()
 #endif
         Printer::debugLevel |= 8; // Go into dry mode
     } // any sensor defect
+    #endif
+
 }
 
 void TemperatureController::waitForTargetTemperature()
@@ -586,6 +589,7 @@ void Extruder::selectExtruderById(uint8_t extruderId)
 
 void Extruder::setTemperatureForExtruder(float temperatureInCelsius, uint8_t extr, bool beep, bool wait)
 {
+#if NUM_EXTRUDER > 0
 #if MIXING_EXTRUDER
     extr = 0; // map any virtual extruder number to 0
 #endif // MIXING_EXTRUDER
@@ -611,12 +615,14 @@ void Extruder::setTemperatureForExtruder(float temperatureInCelsius, uint8_t ext
     {
         TemperatureController *tc2 = tempController[1];
         tc2->setTargetTemperature(temperatureInCelsius);
+        tc2->updateTempControlVars();
         if(temperatureInCelsius >= EXTRUDER_FAN_COOL_TEMP) extruder[1].coolerPWM = extruder[1].coolerSpeed;
 #if NUM_EXTRUDER > 2
         if(Extruder::dittoMode > 1 && extr == 0)
         {
             TemperatureController *tc2 = tempController[2];
             tc2->setTargetTemperature(temperatureInCelsius);
+            tc2->updateTempControlVars();
             if(temperatureInCelsius >= EXTRUDER_FAN_COOL_TEMP) extruder[2].coolerPWM = extruder[2].coolerSpeed;
         }
 #endif
@@ -625,6 +631,7 @@ void Extruder::setTemperatureForExtruder(float temperatureInCelsius, uint8_t ext
         {
             TemperatureController *tc2 = tempController[3];
             tc2->setTargetTemperature(temperatureInCelsius);
+            tc2->updateTempControlVars();
             if(temperatureInCelsius >= EXTRUDER_FAN_COOL_TEMP) extruder[3].coolerPWM = extruder[3].coolerSpeed;
         }
 #endif
@@ -698,6 +705,7 @@ void Extruder::setTemperatureForExtruder(float temperatureInCelsius, uint8_t ext
         Printer::filamentPrinted = 0;  // new print, new counter
         Printer::flag2 &= ~PRINTER_FLAG2_RESET_FILAMENT_USAGE;
     }
+#endif
 }
 
 void Extruder::setHeatedBedTemperature(float temperatureInCelsius,bool beep)
@@ -1285,7 +1293,7 @@ const short temptable_4[NUMTEMPS_4][2] PROGMEM =
     {478*4, 46*8},{531*4, 41*8},{584*4, 35*8},{637*4, 30*8},{690*4, 25*8},{743*4, 20*8},{796*4, 14*8},{849*4, 7*8},{902*4, 0*8},
     {955*4, -11*8},{1008*4, -35*8}
 };
-
+// ATC 104GT
 #define NUMTEMPS_8 34
 const short temptable_8[NUMTEMPS_8][2] PROGMEM =
 {
@@ -1328,9 +1336,9 @@ const short temptable_12[NUMTEMPS_12][2] PROGMEM =
     {701*4, 86*8},{736*4, 81*8},{771*4, 76*8},{806*4, 70*8},{841*4, 63*8},{876*4, 56*8},{911*4, 48*8},{946*4, 38*8},{981*4, 23*8},{1005*4, 5*8},{1016*4, 0*8}
 };
 #define NUMTEMPS_13 19
-const short temptable_13[NUMTEMPS_12][2] PROGMEM =
+const short temptable_13[NUMTEMPS_13][2] PROGMEM =
 {
-    {0,0},{908,8},{941,410*8},{982,20*8},{1015,8*30},{1048,8*40},{1080,8*50},{1113,8*60},{1146,8*70},{1178,8*80},{11211,8*90},{1276,8*110},{1318,8*120}
+    {0,0},{908,8},{942,10*8},{982,20*8},{1015,8*30},{1048,8*40},{1080,8*50},{1113,8*60},{1146,8*70},{1178,8*80},{11211,8*90},{1276,8*110},{1318,8*120}
     ,{1670,8*230},{2455,8*500},{3445,8*900},{3666,8*1000},{3871,8*1100},{4095,8*2000}
 };
 #if NUM_TEMPS_USERTHERMISTOR0 > 0
@@ -1640,13 +1648,13 @@ void TemperatureController::setTargetTemperature(float target)
         short oldraw = pgm_read_word(&temptable[0]);
         short oldtemp = pgm_read_word(&temptable[1]);
         short newraw = 0,newtemp;
-        while(i<num)
+        while(i < num)
         {
             newraw = pgm_read_word(&temptable[i++]);
             newtemp = pgm_read_word(&temptable[i++]);
             if (newtemp > temp)
             {
-                targetTemperature = oldraw + (int32_t)(oldtemp-temp) * (int32_t)(oldraw-newraw) / (oldtemp-newtemp);
+                targetTemperature = oldraw + (int32_t)(oldtemp - temp) * (int32_t)(oldraw - newraw) / (oldtemp-newtemp);
                 return;
             }
             oldtemp = newtemp;
@@ -1717,13 +1725,15 @@ void TemperatureController::setTargetTemperature(float target)
 uint8_t autotuneIndex = 255;
 void Extruder::disableAllHeater()
 {
-    for(uint8_t i=0; i<NUM_TEMPERATURE_LOOPS; i++)
+#if NUM_TEMPERATURE_LOOPS > 0
+    for(uint8_t i = 0; i < NUM_TEMPERATURE_LOOPS; i++)
     {
         TemperatureController *c = tempController[i];
         c->targetTemperature = 0;
         c->targetTemperatureC = 0;
         pwm_pos[c->pwmIndex] = 0;
     }
+#endif
     autotuneIndex = 255;
 }
 
@@ -1885,6 +1895,7 @@ void writeMonitor()
 
 bool reportTempsensorError()
 {
+#if NUM_TEMPERATURE_LOOPS > 9
     if(!Printer::isAnyTempsensorDefect()) return false;
     for(uint8_t i = 0; i < NUM_TEMPERATURE_LOOPS; i++)
     {
@@ -1898,6 +1909,9 @@ bool reportTempsensorError()
     }
     Com::printErrorFLN(Com::tDryModeUntilRestart);
     return true;
+#else
+    return false;
+#endif
 }
 
 #ifdef SUPPORT_MAX6675
@@ -2204,6 +2218,7 @@ TemperatureController heatedBedController = {NUM_EXTRUDER,HEATED_BED_SENSOR_TYPE
 #define NUM_TEMPERATURE_LOOPS NUM_EXTRUDER
 #endif
 
+#if NUM_TEMPERATURE_LOOPS > 0
 TemperatureController *tempController[NUM_TEMPERATURE_LOOPS] =
 {
 #if NUM_EXTRUDER>0
@@ -2232,4 +2247,4 @@ TemperatureController *tempController[NUM_TEMPERATURE_LOOPS] =
 #endif
 #endif
 };
-
+#endif

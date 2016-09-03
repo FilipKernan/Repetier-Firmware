@@ -161,6 +161,7 @@ void Commands::printCurrentPosition(FSTRINGPARAM(s))
 
 void Commands::printTemperatures(bool showRaw)
 {
+#if NUM_EXTRUDER > 0
     float temp = Extruder::current->tempControl.currentTemperatureC;
 #if HEATED_BED_SENSOR_TYPE == 0
     Com::printF(Com::tTColon,temp);
@@ -198,8 +199,15 @@ void Commands::printTemperatures(bool showRaw)
             Com::printF(Com::tColon,(1023 << (2 - ANALOG_REDUCE_BITS)) - extruder[i].tempControl.currentTemperature);
         }
     }
+#else if NUM_EXTRUDER == 1
+    if(showRaw)
+    {
+            Com::printF(Com::tSpaceRaw,(int)0);
+            Com::printF(Com::tColon,(1023 << (2 - ANALOG_REDUCE_BITS)) - extruder[0].tempControl.currentTemperature);
+    }
 #endif
     Com::println();
+#endif
 }
 void Commands::changeFeedrateMultiply(int factor)
 {
@@ -252,9 +260,10 @@ void Commands::reportPrinterUsage()
     Com::printF(Com::tPrintedFilament, dist, 2);
     Com::printF(Com::tSpacem);
     bool alloff = true;
+#if NUM_EXTRUDER > 0
     for(uint8_t i = 0; i < NUM_EXTRUDER; i++)
         if(tempController[i]->targetTemperatureC > 15) alloff = false;
-
+#endif
     int32_t seconds = (alloff ? 0 : (HAL::timeInMilliseconds() - Printer::msecondsPrinting) / 1000) + HAL::eprGetInt32(EPR_PRINTING_TIME);
     int32_t tmp = seconds / 86400;
     seconds -= tmp * 86400;
@@ -1334,6 +1343,7 @@ void Commands::processGCode(GCode *com)
             EEPROM::setDeltaTowerZOffsetSteps(offz);
         }
 #endif
+        PrintLine::moveRelativeDistanceInSteps(0, 0, -5*Printer::axisStepsPerMM[Z_AXIS], 0, Printer::homingFeedrate[Z_AXIS], true, true);
         Printer::homeAxis(true,true,true);
     }
     break;
@@ -1441,13 +1451,13 @@ void Commands::processGCode(GCode *com)
             extruder[p].zOffset = 0;
             Extruder::selectExtruderById(p);
             float refHeight = Printer::runZProbe(true,false,true);
-            for(int i=0;i < NUM_EXTRUDER;i++) {
+            for(int i = 0;i < NUM_EXTRUDER;i++) {
                 if(i == p) continue;
                 if(s >= 0 && i != s) continue;
                 extruder[i].zOffset = 0;
                 Extruder::selectExtruderById(i);
                 float height = Printer::runZProbe(false,false);
-                extruder[i].zOffset = (height - refHeight)*Printer::axisStepsPerMM[Z_AXIS];
+                extruder[i].zOffset = (height - refHeight + z)*Printer::axisStepsPerMM[Z_AXIS];
             }
             Extruder::selectExtruderById(p);
             Printer::runZProbe(false,true);
@@ -1781,6 +1791,7 @@ void Commands::processMCode(GCode *com)
         UI_CLEAR_STATUS;
         previousMillisCmd = HAL::timeInMilliseconds();
         break;
+#if NUM_TEMPERATURE_LOOPS > 0
     case 116: // Wait for temperatures to reach target temperature
         for(fast8_t h = 0; h < NUM_TEMPERATURE_LOOPS; h++)
         {
@@ -1789,7 +1800,7 @@ void Commands::processMCode(GCode *com)
             EVENT_HEATING_FINISHED(h < NUM_EXTRUDER ? h : -1);
         }
         break;
-
+#endif
 #if FAN_PIN>-1 && FEATURE_FAN_CONTROL
     case 106: // M106 Fan On
         if(!(Printer::flag2 & PRINTER_FLAG2_IGNORE_M106_COMMAND))
@@ -1810,15 +1821,14 @@ void Commands::processMCode(GCode *com)
         }
         if(Printer::debugDryrun())   // simulate movements without printing
         {
-            Extruder::setTemperatureForExtruder(0, 0);
-#if NUM_EXTRUDER>1
+#if NUM_EXTRUDER > 1
             for(uint8_t i = 0; i < NUM_EXTRUDER; i++)
                 Extruder::setTemperatureForExtruder(0, i);
 #else
             Extruder::setTemperatureForExtruder(0, 0);
 #endif
-#if HEATED_BED_TYPE!=0
-            target_bed_raw = 0;
+#if HEATED_BED_TYPE != 0
+            Extruder::setHeatedBedTemperature(0,false);
 #endif
         }
         break;

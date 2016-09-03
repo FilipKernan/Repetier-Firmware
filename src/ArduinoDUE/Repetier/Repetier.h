@@ -306,6 +306,9 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #else
 #define EXTRUDER_JAM_CONTROL 0
 #endif
+#ifndef JAM_METHOD
+#define JAM_METHOD 1
+#endif
 
 #if NUM_EXTRUDER > 0 && EXT0_TEMPSENSOR_TYPE < 101
 #define EXT0_ANALOG_INPUTS 1
@@ -726,7 +729,9 @@ extern const uint8 osAnalogInputChannels[] PROGMEM;
 //extern uint8 osAnalogInputCounter[ANALOG_INPUTS];
 //extern uint osAnalogInputBuildup[ANALOG_INPUTS];
 //extern uint8 osAnalogInputPos; // Current sampling position
+#if ANALOG_INPUTS > 0
 extern volatile uint osAnalogInputValues[ANALOG_INPUTS];
+#endif
 extern uint8_t pwm_pos[NUM_EXTRUDER+3]; // 0-NUM_EXTRUDER = Heater 0-NUM_EXTRUDER of extruder, NUM_EXTRUDER = Heated bed, NUM_EXTRUDER+1 Board fan, NUM_EXTRUDER+2 = Fan
 #if USE_ADVANCE
 #if ENABLE_QUADRATIC_ADVANCE
