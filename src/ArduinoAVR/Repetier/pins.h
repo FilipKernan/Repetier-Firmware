@@ -23,6 +23,7 @@ STEPPER_CURRENT_CONTROL
 #define CURRENT_CONTROL_DIGIPOT 2  // Use a digipot like RAMBO does
 #define CURRENT_CONTROL_LTC2600 3  // Use LTC2600 like Foltyn 3D Master
 #define CURRENT_CONTROL_ALLIGATOR 4  //Use External DAC like Alligator
+#define CURRENT_CONTROL_MCP4728 5  // Use an i2c DAC as a digipot like PrintrBoard Rev. F
 
 /****************************************************************************************
 * Arduino pin assignment
@@ -170,7 +171,7 @@ STEPPER_CURRENT_CONTROL
 #if MOTHERBOARD == 91
 #define KNOWN_BOARD 1
 
-#ifndef __AVR_ATmega644P__
+#if !defined(__AVR_ATmega644P__) && !defined(__AVR_ATmega1284P__) && !defined(__AVR_ATmega644__) && !defined(__AVR_ATmega1284__)
 #error Oops!  Make sure you have 'OMC with Atmega644 at 20 Mhz' selected from the 'Tools -> Boards' menu.
 #endif
 
@@ -189,8 +190,8 @@ STEPPER_CURRENT_CONTROL
 #define ORIG_Z_STEP_PIN         23
 #define ORIG_Z_DIR_PIN          22
 #define ORIG_Z_ENABLE_PIN       10
-#define ORIG_Z_MIN_PIN          -2
-#define ORIG_Z_MAX_PIN           2
+#define ORIG_Z_MIN_PIN           2
+#define ORIG_Z_MAX_PIN          -1
 
 #define ORIG_E0_STEP_PIN        24
 #define ORIG_E0_DIR_PIN         21
@@ -204,7 +205,7 @@ STEPPER_CURRENT_CONTROL
 #define ORIG_FAN_PIN            14
 #define ORIG_PS_ON_PIN          -1
 
-#define SDCARDDETECT 	        -1
+#define ORIG_SDCARDDETECT 	    -1
 
 #define HEATER_0_PIN             3
 #define TEMP_0_PIN               0
@@ -213,6 +214,9 @@ STEPPER_CURRENT_CONTROL
 #define HEATER_2_PIN            -1
 #define TEMP_2_PIN               2
 
+#define SCK_PIN          7
+#define MISO_PIN         6
+#define MOSI_PIN         5
 
 #define E0_PINS ORIG_E0_STEP_PIN,ORIG_E0_DIR_PIN,ORIG_E0_ENABLE_PIN,
 
@@ -397,7 +401,7 @@ STEPPER_CURRENT_CONTROL
 
 #define SDPOWER            -1
 #define SDSS               53
-#define SDCARDDETECT 	    49
+#define ORIG_SDCARDDETECT 	    49
 
 #define LED_PIN            13
 #define ORIG_FAN_PIN            9
@@ -474,7 +478,7 @@ STEPPER_CURRENT_CONTROL
 #ifdef AZTEEG_X3
 #define SDSUPPORT 1
 #define SDCARDDETECTINVERTED 0
-#define SDCARDDETECT 49
+#define ORIG_SDCARDDETECT 49
 #define ORIG_FAN_PIN           4
 #define ORIG_FAN2_PIN          5
 #define LIGHT_PIN         6
@@ -502,7 +506,7 @@ STEPPER_CURRENT_CONTROL
 #ifdef AZTEEG_X3_PRO
 #define SDSUPPORT true
 #define SDCARDDETECTINVERTED false
-#define SDCARDDETECT 49
+#define ORIG_SDCARDDETECT 49
 #define SDSS               53
 #define ORIG_FAN_PIN           5
 #define ORIG_FAN2_PIN          6
@@ -534,6 +538,8 @@ STEPPER_CURRENT_CONTROL
 
 #define TEMP_6_PIN         4   // Thermocouple 1
 #define TEMP_7_PIN         5   // Thermocouple 2
+#define THERMOCOUPLE_0_PIN         4   // Thermocouple 1
+#define THERMOCOUPLE_1_PIN         5   // Thermocouple 2
 
 
 #define E1_PINS ORIG_E1_STEP_PIN,ORIG_E1_DIR_PIN,ORIG_E1_ENABLE_PIN,
@@ -949,7 +955,7 @@ STEPPER_CURRENT_CONTROL
 #define MISO_PIN         6
 #define MOSI_PIN         5
 #define SDSUPPORT 1  // sd card reader on board
-#define SDCARDDETECT -1
+#define ORIG_SDCARDDETECT -1
 
 #define E0_PINS ORIG_E0_STEP_PIN,ORIG_E0_DIR_PIN,ORIG_E0_ENABLE_PIN,
 #define E1_PINS
@@ -1220,7 +1226,7 @@ STEPPER_CURRENT_CONTROL
 
 #define LED_PIN -1
 #define SDSUPPORT 1  // sd card reader on board
-#define SDCARDDETECT -1
+#define ORIG_SDCARDDETECT -1
 
 #define E0_PINS ORIG_E0_STEP_PIN,ORIG_E0_DIR_PIN,ORIG_E0_ENABLE_PIN,
 #define E1_PINS ORIG_E1_STEP_PIN,ORIG_E1_DIR_PIN,ORIG_E1_ENABLE_PIN,
@@ -1341,6 +1347,85 @@ STEPPER_CURRENT_CONTROL
 #endif
 
 /****************************************************************************************
+* Printrboard Rev. F pin assingments (ATMEGA90USB1286)
+* Requires the Teensyduino software with Teensy2.0++ selected in arduino IDE!
+* See http://reprap.org/wiki/Printrboard for more info
+*
+* Rev. F uses an MCP4728 DAC to generate the Reference Voltage used to determine the
+* Stepper Driver's maximum current.
+*
+* On PrintrBoard, with Sense Resistors = 0.11 Ohms, and 2 Amps maximum current rating,
+* the Maximum VRef to send is calculated as:
+*
+*   2.00 Amps Maximum Output * (8 * 0.11 Ohms) = 1.76 Maximum VRef from MCP4728.
+*
+****************************************************************************************/
+#if MOTHERBOARD == 92
+#define KNOWN_BOARD 1
+
+// Definition for current control
+#define STEPPER_CURRENT_CONTROL   CURRENT_CONTROL_MCP4728
+
+#define MCP4728_I2C_ADDRESS	0x60 << 1 // Base Address (0x60); Pre-Shifted Left 1 bit for Repetier HAL.
+#define MCP4728_GENERALCALL_ADDRESS  0x00 // General Call Address. Weird, but OK...
+#define MCP4728_CMD_MULTI_WRITE   0B01000000 // Writes DAC Settings, Does not update EEPROM.
+#define MCP4728_CMD_SEQ_WRITE     0B01010000 // Writes DAC Settings, also persists to EEPROM.
+#define MCP4728_CMD_GC_UPDATE     0B00001000 // General Call Update - Update all DAC Outputs (Only way to update DAC Outputs on PrintrBoard Rev F because they tied /LDAC to VDD.
+#define MCP4728_CMD_GC_RESET      0B00000110 // General Call Reset
+#define MCP4728_VREF 		1 // From DataSheet. We will use MCP4728's internal 2.048V as Vref
+#define MCP4728_GAIN		0 // From DataSheet. Use 1x Gain Multiplier (0V - 2.048V);
+#define MCP4728_NUM_CHANNELS    4 // Duh. Specified here in case there's a beefier chip used on some other board someday.
+#define MCP4728_STEPPER_ORDER 	{3,2,1,0} // PrintrBoard wired 'em up backwards. SMH.  X, Y, Z, E
+#define MCP4728_VOUT_MAX	3520 // 1.76 Volts * 2000. See DataSheets for the math. Value should be between 0-4095
+
+#define ORIG_X_STEP_PIN         28
+#define ORIG_X_DIR_PIN          29
+#define ORIG_X_ENABLE_PIN       19
+#define ORIG_X_MIN_PIN          47
+#define ORIG_X_MAX_PIN          -1
+
+#define ORIG_Y_STEP_PIN         30
+#define ORIG_Y_DIR_PIN          31
+#define ORIG_Y_ENABLE_PIN       18
+#define ORIG_Y_MIN_PIN          24 // (Was Pin 20 on Rev B-E); Don't use this if you want to use SD card. Use 37 and put the endstop in the e-stop slot!!!
+#define ORIG_Y_MAX_PIN          -1
+
+#define ORIG_Z_STEP_PIN         32
+#define ORIG_Z_DIR_PIN          33
+#define ORIG_Z_ENABLE_PIN       17
+#define ORIG_Z_MIN_PIN          36
+#define ORIG_Z_MAX_PIN          -1
+
+#define ORIG_E0_STEP_PIN         34
+#define ORIG_E0_DIR_PIN          35
+#define ORIG_E0_ENABLE_PIN       13
+#define TEMP_0_PIN          1 // Extruder - ANALOG PIN NUMBER!
+#define TEMP_1_PIN          0 // Bed - ANALOG PIN NUMBER!
+#define HEATER_0_PIN       15 // Extruder
+#define HEATER_1_PIN       14 // bed
+#define HEATER_2_PIN   -1
+#define TEMP_2_PIN     -1
+
+#define SDPOWER            -1
+#define SDSS               20 // (Was Pin 26 on Rev. B-E);  old value 2
+#define LED_PIN            -1
+
+#define ORIG_FAN_PIN            16 // Fan
+#define ORIG_PS_ON_PIN          -1
+
+#define E0_PINS ORIG_E0_STEP_PIN,ORIG_E0_DIR_PIN,ORIG_E0_ENABLE_PIN,
+#define E1_PINS
+#if !SDSUPPORT
+// these pins are defined in the SD library if building with SD support
+#define SCK_PIN          21
+#define MISO_PIN         23
+#define MOSI_PIN         22
+#endif
+
+#endif
+
+
+/****************************************************************************************
 * Printrboard Rev. B pin assingments (ATMEGA90USB1286)
 * Requires the Teensyduino software with Teensy2.0++ selected in arduino IDE!
 * See http://reprap.org/wiki/Printrboard for more info
@@ -1417,7 +1502,7 @@ STEPPER_CURRENT_CONTROL
 #define BEEPER_PIN 23
 #define BEEPER_TYPE 1
 #define SDSUPPORT 1  // sd card reader on board
-#define SDCARDDETECT -1
+#define ORIG_SDCARDDETECT -1
 
 // digital pin mappings
 #define ORIG_X_STEP_PIN         54	// PINF.0, 97, STP_DRV1
@@ -1528,6 +1613,7 @@ STEPPER_CURRENT_CONTROL
 #define HEATER_1_PIN       8    // EXTRUDER 2 (FAN On Sprinter)
 #define HEATER_2_PIN       10   // Heated bed
 
+#define THERMOCOUPLE_0_PIN 8
 #define TEMP_3_PIN         8   // Thermocouple 0 ANALOG NUMBERING
 #define TEMP_0_PIN         13   // ANALOG NUMBERING
 #define TEMP_1_PIN         15   // ANALOG NUMBERING
@@ -1538,7 +1624,7 @@ STEPPER_CURRENT_CONTROL
 #define BEEPER_PIN 33			// Beeper on AUX-4
 #define BEEPER_TYPE 1
 #define SDSUPPORT 1  // sd card reader on board
-#define SDCARDDETECT -1
+#define ORIG_SDCARDDETECT -1
 
 
 #ifdef ULTRA_LCD
@@ -1633,7 +1719,7 @@ STEPPER_CURRENT_CONTROL
 
 #define SDPOWER            1
 #define SDSS               53
-#define SDCARDDETECT 	   6
+#define ORIG_SDCARDDETECT 	   6
 #define SDSUPPORT 1            // already defined in config.h
 #define SDCARDDETECTINVERTED 1 // already defined in config.h
 
@@ -1692,7 +1778,7 @@ STEPPER_CURRENT_CONTROL
 #define ORIG_E2_DIR_PIN          24
 #define ORIG_E2_ENABLE_PIN       22
 
-#define SDCARDDETECT -1		// Ramps does not use this port
+#define ORIG_SDCARDDETECT -1		// Ramps does not use this port
 #define SDPOWER            -1
 #define SDSS               53
 
@@ -1712,6 +1798,8 @@ STEPPER_CURRENT_CONTROL
 #define TEMP_1_PIN         14   // Thermistor 2 for heated bed ANALOG NUMBERING
 #define TEMP_3_PIN         8    // Thermocouple 0
 #define TEMP_4_PIN         4    // Thermocouple 1
+#define THERMOCOUPLE_0_PIN 8
+#define THERMOCOUPLE_0_PIN 4
 
 #define BEEPER_PIN 64			// Beeper on AUX-4
 
@@ -1812,7 +1900,7 @@ STEPPER_CURRENT_CONTROL
 
 #define BEEPER_PIN -1
 
-#define SDCARDDETECT -1 // Megatronics does not use this port
+#define ORIG_SDCARDDETECT -1 // Megatronics does not use this port
 #define E0_PINS ORIG_E0_STEP_PIN,ORIG_E0_DIR_PIN,ORIG_E0_ENABLE_PIN,
 #define E1_PINS ORIG_E1_STEP_PIN,ORIG_E1_DIR_PIN,ORIG_E1_ENABLE_PIN,
 #define E2_PINS
@@ -1863,7 +1951,7 @@ STEPPER_CURRENT_CONTROL
 #define ORIG_E2_DIR_PIN 60
 #define ORIG_E2_ENABLE_PIN 23
 
-#define SDCARDDETECT -1	 // Ramps does not use this port
+#define ORIG_SDCARDDETECT -1	 // Ramps does not use this port
 #define SDPOWER -1
 #define SDSS 53
 
@@ -1902,6 +1990,10 @@ S3(ext)=9
 #define TEMP_3_PIN 13 // Extruder 3
 #define TEMP_1_PIN 12 // Heated bed
 
+#define THERMOCOUPLE_0_PIN 11
+#define THERMOCOUPLE_1_PIN 10
+#define THERMOCOUPLE_2_PIN 8
+#define THERMOCOUPLE_3_PIN 9
 
 #define BEEPER_PIN 61	 // Beeper on AUX-4
 #define SDSUPPORT true // sd card reader on board
@@ -1974,6 +2066,8 @@ S3(ext)=9
 #define HEATER_2_PIN   7
 #define TEMP_2_PIN     1
 
+#define TEMP_3_PIN     7
+
 #define ORIG_E0_STEP_PIN    34
 #define ORIG_E0_DIR_PIN     43
 #define ORIG_E0_ENABLE_PIN  26
@@ -1993,6 +2087,8 @@ S3(ext)=9
 #define SDSS           53
 #define LED_PIN        13
 #define ORIG_FAN_PIN        8
+#define ORIG_FAN2_PIN    6
+#define ORIG_FAN3_PIN    2
 #define ORIG_PS_ON_PIN      4
 #define SUICIDE_PIN    -1  //PIN that has to be turned on right after start, to keep power flowing.
 
@@ -2098,7 +2194,7 @@ S3(ext)=9
 #define ORIG_E1_ENABLE_PIN       30
 
 #define SDPOWER            -1
-#define SDCARDDETECT 	    49
+#define ORIG_SDCARDDETECT 	    49
 
 #define LED_PIN            13
 #define ORIG_FAN_PIN       7        ////*****fan
@@ -2161,7 +2257,7 @@ S3(ext)=9
 #define ORIG_E3_ENABLE_PIN       13
 
 #define SDPOWER            -1
-#define SDCARDDETECT 	   10
+#define ORIG_SDCARDDETECT 	   10
 
 #define LED_PIN            30
 #define ORIG_FAN_PIN       7        ////*****fan
@@ -2313,7 +2409,7 @@ S3(ext)=9
 
 ///////*********ISP for TFcard
 #define SDPOWER           -1
-#define SDCARDDETECT 	  40
+#define ORIG_SDCARDDETECT 	  40
 #define SDSS              53
 #define SCK_PIN           52
 #define MISO_PIN          50
@@ -2476,6 +2572,11 @@ S3(ext)=9
 #define FAN_PIN ORIG_FAN_PIN
 #define FAN2_PIN ORIG_FAN2_PIN
 #define PS_ON_PIN ORIG_PS_ON_PIN
+
+#ifndef ORIG_SDCARDDETECT
+#define ORIG_SDCARDDETECT -1
+#endif
+#define SDCARDDETECT ORIG_SDCARDDETECT
 
 #define SENSITIVE_PINS {0, 1, ORIG_X_STEP_PIN, ORIG_X_DIR_PIN, ORIG_X_ENABLE_PIN, ORIG_X_MIN_PIN, ORIG_X_MAX_PIN, \
         ORIG_Y_STEP_PIN, ORIG_Y_DIR_PIN, ORIG_Y_ENABLE_PIN, ORIG_Y_MIN_PIN, ORIG_Y_MAX_PIN, ORIG_Z_STEP_PIN,\

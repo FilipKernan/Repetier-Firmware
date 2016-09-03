@@ -283,6 +283,18 @@
 #define UI_TEXT_WIZ_WAITTEMP1 "Wait for target"
 #define UI_TEXT_WIZ_WAITTEMP2 "temperatures ..."
 #define UI_TEXT_EXTRUDER_JAM "Extruder Jam"
+#define UI_TEXT_STANDBY "Standby"
+
+#define UI_TEXT_BED_COATING "Bed Coating"
+#define UI_TEXT_BED_COATING_SET "Bed coating set to",""
+#define UI_TEXT_NOCOATING "No Coating"
+#define UI_TEXT_BUILDTAK "BuildTak"
+#define UI_TEXT_KAPTON "Kapton"
+#define UI_TEXT_BLUETAPE "Blue Paper Tape"
+#define UI_TEXT_PETTAPE "Green PET Tape"
+#define UI_TEXT_GLUESTICK "Glue Stick"
+#define UI_TEXT_CUSTOM "Custom"
+#define UI_TEXT_COATING_CUSTOM "Custom : %oCmm"
 
 // *************** German translation ****************
 
@@ -470,6 +482,7 @@
 #define UI_TEXT_CLICK_DONE "Weiter mit Klick"
 #define UI_TEXT_AUTOLEVEL_ONOFF  "Autolevel: %ll"
 #define UI_TEXT_SERVOPOS "Servo Pos.: %oS"
+#define UI_TEXT_STANDBY "Bereitschaft"
 
 #endif
 
@@ -1930,5 +1943,20 @@
 #define UI_TEXT_STRING_HM_DEADTIME     "Dead Time"
 #define UI_TEXT_STRING_HM_SLOWBANG     "SlowBang"
 #define UI_TEXT_STOP_PRINT "Stop Print"
+#define UI_TEXT_Z_BABYSTEPPING "Z Babystep.:%oYmm"
+#define UI_TEXT_CHANGE_FILAMENT "Change filament"
+#define UI_TEXT_WIZ_CH_FILAMENT1 "Change filament"
+#define UI_TEXT_WIZ_CH_FILAMENT2 "Rotate to move"
+#define UI_TEXT_WIZ_CH_FILAMENT3 "filament up/down"
+#define UI_TEXT_CLICK_DONE "Click when done"
+#define UI_TEXT_AUTOLEVEL_ONOFF  "Autolevel: %ll"
+#define UI_TEXT_SERVOPOS "Servo pos.: %oS"
+#define UI_TEXT_IGNORE_M106      "Ignore M106 cmd %Fi"
+#define UI_TEXT_WIZ_REHEAT1 "Click to reheat"
+#define UI_TEXT_WIZ_REHEAT2 "extruders."
+#define UI_TEXT_WIZ_WAITTEMP1 "Wait for target"
+#define UI_TEXT_WIZ_WAITTEMP2 "temperatures ..."
+#define UI_TEXT_EXTRUDER_JAM "Extruder Jam"
+#define UI_TEXT_STANDBY "Standby"
 
 #endif

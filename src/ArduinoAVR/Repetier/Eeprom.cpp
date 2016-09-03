@@ -410,6 +410,7 @@ void EEPROM::storeDataIntoEEPROM(uint8_t corrupted)
 #endif
         HAL::eprSetInt32(o+EPR_EXTRUDER_X_OFFSET,e->xOffset);
         HAL::eprSetInt32(o+EPR_EXTRUDER_Y_OFFSET,e->yOffset);
+        HAL::eprSetInt32(o+EPR_EXTRUDER_Z_OFFSET,e->zOffset);
         HAL::eprSetInt16(o+EPR_EXTRUDER_WATCH_PERIOD,e->watchPeriod);
 #if RETRACT_DURING_HEATUP
         HAL::eprSetInt16(o+EPR_EXTRUDER_WAIT_RETRACT_TEMP,e->waitRetractTemperature);
@@ -452,6 +453,7 @@ void EEPROM::initalizeUncached()
     HAL::eprSetFloat(EPR_Z_PROBE_XY_SPEED,Z_PROBE_XY_SPEED);
     HAL::eprSetFloat(EPR_Z_PROBE_X_OFFSET,Z_PROBE_X_OFFSET);
     HAL::eprSetFloat(EPR_Z_PROBE_Y_OFFSET,Z_PROBE_Y_OFFSET);
+    HAL::eprSetFloat(EPR_Z_PROBE_Z_OFFSET,Z_PROBE_Z_OFFSET);
     HAL::eprSetFloat(EPR_Z_PROBE_X1,Z_PROBE_X1);
     HAL::eprSetFloat(EPR_Z_PROBE_Y1,Z_PROBE_Y1);
     HAL::eprSetFloat(EPR_Z_PROBE_X2,Z_PROBE_X2);
@@ -468,6 +470,7 @@ void EEPROM::initalizeUncached()
     HAL::eprSetFloat(EPR_AXISCOMP_TANYZ,AXISCOMP_TANYZ);
     HAL::eprSetFloat(EPR_AXISCOMP_TANXZ,AXISCOMP_TANXZ);
     HAL::eprSetFloat(EPR_Z_PROBE_BED_DISTANCE,Z_PROBE_BED_DISTANCE);
+    Printer::zBedOffset = HAL::eprGetFloat(EPR_Z_PROBE_Z_OFFSET);
 #if DRIVE_SYSTEM == DELTA
     HAL::eprSetFloat(EPR_DELTA_DIAGONAL_ROD_LENGTH,DELTA_DIAGONAL_ROD);
     HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS,ROD_RADIUS);
@@ -623,6 +626,10 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
 #endif
             if(version > 1)
                 e->coolerSpeed = HAL::eprGetByte(o+EPR_EXTRUDER_COOLER_SPEED);
+            if(version < 13) {
+                HAL::eprSetInt32(o+EPR_EXTRUDER_Z_OFFSET,e->zOffset);
+            }
+            e->zOffset = HAL::eprGetInt32(o + EPR_EXTRUDER_Z_OFFSET);
         }
     }
     if(version != EEPROM_PROTOCOL_VERSION)
@@ -711,6 +718,9 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
             HAL::eprSetFloat(EPR_RETRACTION_UNDO_SPEED,RETRACTION_UNDO_SPEED);
             HAL::eprSetByte(EPR_AUTORETRACT_ENABLED,AUTORETRACT_ENABLED);
         }
+        if(version < 14) {
+            HAL::eprSetFloat(EPR_Z_PROBE_Z_OFFSET,Z_PROBE_Z_OFFSET);
+        }
         /*        if (version<8) {
         #if DRIVE_SYSTEM==DELTA
                   // Prior to verion 8, the cartesian max was stored in the zmax
@@ -729,6 +739,7 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
 
         storeDataIntoEEPROM(false); // Store new fields for changed version
     }
+    Printer::zBedOffset = HAL::eprGetFloat(EPR_Z_PROBE_Z_OFFSET);
     Printer::updateDerivedParameter();
     Extruder::initHeatedBed();
 #endif
@@ -890,6 +901,7 @@ void EEPROM::writeSettings()
     writeFloat(EPR_Z_MAX_TRAVEL_ACCEL, Com::tEPRZTravelAcceleration);
 #endif
 #endif
+    writeFloat(EPR_Z_PROBE_Z_OFFSET, Com::tZProbeOffsetZ);
 #if FEATURE_Z_PROBE
     writeFloat(EPR_Z_PROBE_HEIGHT, Com::tZProbeHeight);
     writeFloat(EPR_Z_PROBE_BED_DISTANCE, Com::tZProbeBedDitance);
@@ -959,6 +971,7 @@ void EEPROM::writeSettings()
 #endif
         writeLong(o + EPR_EXTRUDER_X_OFFSET, Com::tEPRXOffset);
         writeLong(o + EPR_EXTRUDER_Y_OFFSET, Com::tEPRYOffset);
+        writeLong(o + EPR_EXTRUDER_Z_OFFSET, Com::tEPRZOffset);
         writeInt(o + EPR_EXTRUDER_WATCH_PERIOD, Com::tEPRStabilizeTime);
 #if RETRACT_DURING_HEATUP
         writeInt(o + EPR_EXTRUDER_WAIT_RETRACT_TEMP, Com::tEPRRetractionWhenHeating);

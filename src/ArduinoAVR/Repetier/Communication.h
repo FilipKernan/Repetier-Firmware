@@ -107,6 +107,7 @@ FSTRINGVAR(tXMaxColon)
 FSTRINGVAR(tYMinColon)
 FSTRINGVAR(tYMaxColon)
 FSTRINGVAR(tZMinColon)
+FSTRINGVAR(tZ2MinMaxColon)
 FSTRINGVAR(tZMaxColon)
 FSTRINGVAR(tJerkColon)
 FSTRINGVAR(tZJerkColon)
@@ -118,6 +119,8 @@ FSTRINGVAR(tQuadraticKColon)
 FSTRINGVAR(tEEPROMUpdated)
 FSTRINGVAR(tExtruderJam)
 FSTRINGVAR(tFilamentSlipping)
+FSTRINGVAR(tPauseCommunication)
+FSTRINGVAR(tContinueCommunication)
 #if DRIVE_SYSTEM == DELTA
 FSTRINGVAR(tMeasurementReset)
 FSTRINGVAR(tMeasureDeltaSteps)
@@ -233,6 +236,7 @@ FSTRINGVAR(tWait)
 #if EEPROM_MODE==0
 FSTRINGVAR(tNoEEPROMSupport)
 #else
+FSTRINGVAR(tZProbeOffsetZ)
 #if FEATURE_Z_PROBE
 FSTRINGVAR(tZProbeHeight)
 FSTRINGVAR(tZProbeOffsetX)
@@ -330,6 +334,7 @@ FSTRINGVAR(tEPRDGain)
 FSTRINGVAR(tEPRPIDMaxValue)
 FSTRINGVAR(tEPRXOffset)
 FSTRINGVAR(tEPRYOffset)
+FSTRINGVAR(tEPRZOffset)
 FSTRINGVAR(tEPRStabilizeTime)
 FSTRINGVAR(tEPRRetractionWhenHeating)
 FSTRINGVAR(tEPRDistanceRetractHeating)
@@ -377,6 +382,11 @@ FSTRINGVAR(tEPRRetractionUndoSpeed)
 #endif
 FSTRINGVAR(tConfig)
 FSTRINGVAR(tExtrDot)
+
+#if STEPPER_CURRENT_CONTROL == CURRENT_CONTROL_MCP4728
+FSTRINGVAR(tMCPEpromSettings)
+FSTRINGVAR(tMCPCurrentSettings)
+#endif
 
 //AFTER CODE ADD BY XKY   ******
 FSTRINGVAR(tAutoLeveingGcode)

@@ -112,6 +112,7 @@ FSTRINGVALUE(Com::tYMinColon,"y_min:")
 FSTRINGVALUE(Com::tYMaxColon,"y_max:")
 FSTRINGVALUE(Com::tZMinColon,"z_min:")
 FSTRINGVALUE(Com::tZMaxColon,"z_max:")
+FSTRINGVALUE(Com::tZ2MinMaxColon,"z2_minmax:")
 FSTRINGVALUE(Com::tJerkColon,"Jerk:")
 FSTRINGVALUE(Com::tZJerkColon," ZJerk:")
 FSTRINGVALUE(Com::tLinearStepsColon," linear steps:")
@@ -123,6 +124,8 @@ FSTRINGVALUE(Com::tLinearLColon,"linear L:")
 FSTRINGVALUE(Com::tQuadraticKColon," quadratic K:")
 FSTRINGVALUE(Com::tExtruderJam, UI_TEXT_EXTRUDER_JAM)
 FSTRINGVALUE(Com::tFilamentSlipping,"Filament slipping")
+FSTRINGVALUE(Com::tPauseCommunication,"// action:pause")
+FSTRINGVALUE(Com::tContinueCommunication,"// action:resume")
 #if DRIVE_SYSTEM == DELTA
 FSTRINGVALUE(Com::tMeasurementReset,"Measurement reset.")
 FSTRINGVALUE(Com::tMeasureDeltaSteps,"Measure/delta (Steps) =")
@@ -232,6 +235,7 @@ FSTRINGVALUE(Com::tWait,WAITING_IDENTIFIER)
 #if EEPROM_MODE == 0
 FSTRINGVALUE(Com::tNoEEPROMSupport,"No EEPROM support compiled.\r\n")
 #else
+FSTRINGVALUE(Com::tZProbeOffsetZ, "Coating thickness [mm]")
 #if FEATURE_Z_PROBE
 FSTRINGVALUE(Com::tZProbeHeight,"Z-probe height [mm]")
 FSTRINGVALUE(Com::tZProbeBedDitance,"Max. z-probe - bed dist. [mm]")
@@ -268,9 +272,9 @@ FSTRINGVALUE(Com::tEPRFilamentPrinted,"Filament printed [m]")
 FSTRINGVALUE(Com::tEPRPrinterActive,"Printer active [s]")
 FSTRINGVALUE(Com::tEPRMaxInactiveTime,"Max. inactive time [ms,0=off]")
 FSTRINGVALUE(Com::tEPRStopAfterInactivty,"Stop stepper after inactivity [ms,0=off]")
-FSTRINGVALUE(Com::tEPRXHomePos,"X home pos [mm]")
-FSTRINGVALUE(Com::tEPRYHomePos,"Y home pos [mm]")
-FSTRINGVALUE(Com::tEPRZHomePos,"Z home pos [mm]")
+FSTRINGVALUE(Com::tEPRXHomePos,"X min pos [mm]")
+FSTRINGVALUE(Com::tEPRYHomePos,"Y min pos [mm]")
+FSTRINGVALUE(Com::tEPRZHomePos,"Z min pos [mm]")
 FSTRINGVALUE(Com::tEPRXMaxLength,"X max length [mm]")
 FSTRINGVALUE(Com::tEPRYMaxLength,"Y max length [mm]")
 FSTRINGVALUE(Com::tEPRZMaxLength,"Z max length [mm]")
@@ -344,6 +348,7 @@ FSTRINGVALUE(Com::tEPRDGain,"PID D-gain")
 FSTRINGVALUE(Com::tEPRPIDMaxValue,"PID max value [0-255]")
 FSTRINGVALUE(Com::tEPRXOffset,"X-offset [steps]")
 FSTRINGVALUE(Com::tEPRYOffset,"Y-offset [steps]")
+FSTRINGVALUE(Com::tEPRZOffset,"Z-offset [steps]")
 FSTRINGVALUE(Com::tEPRStabilizeTime,"temp. stabilize time [s]")
 FSTRINGVALUE(Com::tEPRRetractionWhenHeating,"temp. for retraction when heating [C]")
 FSTRINGVALUE(Com::tEPRDistanceRetractHeating,"distance to retract when heating [mm]")
@@ -392,6 +397,11 @@ FSTRINGVALUE(Com::tEPRRetractionUndoSpeed,"Retraction undo speed")
 #endif
 FSTRINGVALUE(Com::tConfig,"Config:")
 FSTRINGVALUE(Com::tExtrDot,"Extr.")
+
+#if STEPPER_CURRENT_CONTROL == CURRENT_CONTROL_MCP4728
+FSTRINGVALUE(Com::tMCPEpromSettings,  "MCP4728 DAC EEPROM Settings:")
+FSTRINGVALUE(Com::tMCPCurrentSettings,"MCP4728 DAC Current Settings:")
+#endif
 
 void Com::config(FSTRINGPARAM(text)) {
     printF(tConfig);
@@ -456,7 +466,7 @@ void Com::printFLN(FSTRINGPARAM(text),const char *msg) {
 
 void Com::printF(FSTRINGPARAM(ptr)) {
   char c;
-  while ((c=HAL::readFlashByte(ptr++)) != 0)
+  while ((c = HAL::readFlashByte(ptr++)) != 0)
      HAL::serialWriteByte(c);
 }
 void Com::printF(FSTRINGPARAM(text),const char *msg) {

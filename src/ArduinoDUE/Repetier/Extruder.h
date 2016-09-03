@@ -188,6 +188,7 @@ public:
     uint8_t id;
     int32_t xOffset;
     int32_t yOffset;
+    int32_t zOffset;
     float stepsPerMM;        ///< Steps per mm.
     int8_t enablePin;          ///< Pin to enable extruder stepper motor.
 //  uint8_t directionPin; ///< Pin number to assign the direction.
@@ -267,7 +268,7 @@ public:
     static void initHeatedBed();
     static void setHeatedBedTemperature(float temp_celsius,bool beep = false);
     static float getHeatedBedTemperature();
-    static void setTemperatureForExtruder(float temp_celsius,uint8_t extr,bool beep = false);
+    static void setTemperatureForExtruder(float temp_celsius,uint8_t extr,bool beep = false,bool wait = false);
     static void pauseExtruders();
     static void unpauseExtruders();
 };

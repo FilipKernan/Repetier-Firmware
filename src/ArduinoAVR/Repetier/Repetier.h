@@ -22,7 +22,9 @@
 #ifndef _REPETIER_H
 #define _REPETIER_H
 
-#define REPETIER_VERSION "0.92.3"
+#include <math.h>
+
+#define REPETIER_VERSION "0.92.4"
 
 // ##########################################################################################
 // ##                                  Debug configuration                                 ##
@@ -49,7 +51,7 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 /** If enabled, steps to move and moved steps are compared. */
 //#define DEBUG_STEPCOUNT
 /** This enables code to make M666 drop an ok, so you get problems with communication. It is to test host robustness. */
-#define DEBUG_COM_ERRORS
+//#define DEBUG_COM_ERRORS
 /** Adds a menu point in quick settings to write debg informations to the host in case of hangs where the ui still works. */
 //#define DEBUG_PRINT
 //#define DEBUG_DELTA_OVERFLOW
@@ -73,6 +75,7 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define ZX_GANTRY 9
 
 #define WIZARD_STACK_SIZE 8
+#define IGNORE_COORDINATE 999999
 
 // Uncomment if no analyzer is connected
 //#define ANALYZER
@@ -117,24 +120,13 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define ANALOG_REF_INT_2_56 _BV(REFS0) | _BV(REFS1)
 #define ANALOG_REF ANALOG_REF_AVCC
 
-// MS1 MS2 Stepper Driver Microstepping mode table
-#define MICROSTEP1 LOW,LOW
-#define MICROSTEP2 HIGH,LOW
-#define MICROSTEP4 LOW,HIGH
-#define MICROSTEP8 HIGH,HIGH
-#if (MOTHERBOARD == 501)
-#define MICROSTEP16 LOW,LOW
-#else
-#define MICROSTEP16 HIGH,HIGH
-#endif
-#define MICROSTEP32 HIGH,HIGH
-
 #define HOME_ORDER_XYZ 1
 #define HOME_ORDER_XZY 2
 #define HOME_ORDER_YXZ 3
 #define HOME_ORDER_YZX 4
 #define HOME_ORDER_ZXY 5
 #define HOME_ORDER_ZYX 6
+#define HOME_ORDER_ZXYTZ 7 // Needs hot hotend for correct homing
 
 #define NO_CONTROLLER 0
 #define UICONFIG_CONTROLLER 1
@@ -155,6 +147,11 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define CONTROLLER_GAMEDUINO2 16
 #define CONTROLLER_MIREGLI 17
 #define CONTROLLER_GATE_3NOVATICA 18
+#define CONTROLLER_SPARKLCD 19
+#define CONTROLLER_BAM_DICE_DUE 20
+#define CONTROLLER_VIKI2 21
+#define CONTROLLER_LCD_MP_PHARAOH_DUE 22
+#define CONTROLLER_FELIX_DUE 405
 
 //direction flags
 #define X_DIRPOS 1
@@ -179,8 +176,39 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 // add pid control
 #define TEMP_PID 1
 
-
 #include "Configuration.h"
+
+#if FEATURE_Z_PROBE && Z_PROBE_PIN < 0
+#error You need to define Z_PROBE_PIN to use z probe!
+#endif
+
+#if DISTORTION_CORRECTION
+#if !FEATURE_Z_PROBE
+#error Distortion correction requires the z probe feature to be enabled and configured!
+#endif
+#endif
+
+#ifndef MAX_ROOM_TEMPERATURE
+#define MAX_ROOM_TEMPERATURE 40
+#endif
+#ifndef ZHOME_X_POS
+#define ZHOME_X_POS IGNORE_COORDINATE
+#endif
+#ifndef ZHOME_Y_POS
+#define ZHOME_Y_POS IGNORE_COORDINATE
+#endif
+
+// MS1 MS2 Stepper Driver Microstepping mode table
+#define MICROSTEP1 LOW,LOW
+#define MICROSTEP2 HIGH,LOW
+#define MICROSTEP4 LOW,HIGH
+#define MICROSTEP8 HIGH,HIGH
+#if (MOTHERBOARD == 501)
+#define MICROSTEP16 LOW,LOW
+#else
+#define MICROSTEP16 HIGH,HIGH
+#endif
+#define MICROSTEP32 HIGH,HIGH
 
 #define GCODE_BUFFER_SIZE 1
 
@@ -192,6 +220,11 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #if !defined(Z_PROBE_REPETITIONS) || Z_PROBE_REPETITIONS < 1
 #define Z_PROBE_SWITCHING_DISTANCE 0.5 // Distance to safely untrigger probe
 #define Z_PROBE_REPETITIONS 1
+#endif
+
+#ifndef MINMAX_HARDWARE_ENDSTOP_Z2
+#define MINMAX_HARDWARE_ENDSTOP_Z2 0
+#define Z2_MINMAX_PIN -1
 #endif
 
 #define SPEED_MIN_MILLIS 400
@@ -246,6 +279,18 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define SHARED_COOLER 0
 #endif
 
+#ifndef START_STEP_WITH_HIGH
+#define START_STEP_WITH_HIGH 1
+#endif
+
+#if NUM_EXTRUDER > 0 && EXT0_TEMPSENSOR_TYPE == 101
+#define SUPPORT_MAX6675
+#endif
+
+#if NUM_EXTRUDER > 0 && EXT0_TEMPSENSOR_TYPE == 102
+#define SUPPORT_MAX31855
+#endif
+
 // Test for shared coolers between extruders and mainboard
 #if EXT0_EXTRUDER_COOLER_PIN > -1 && EXT0_EXTRUDER_COOLER_PIN == FAN_BOARD_PIN
  #define SHARED_COOLER_BOARD_EXT 1
@@ -276,7 +321,7 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define EXT0_ANALOG_CHANNEL
 #endif
 
-#if NUM_EXTRUDER>1 && EXT1_TEMPSENSOR_TYPE<101
+#if NUM_EXTRUDER>1 && EXT1_TEMPSENSOR_TYPE < 101
 #define EXT1_ANALOG_INPUTS 1
 #define EXT1_SENSOR_INDEX EXT0_ANALOG_INPUTS
 #define EXT1_ANALOG_CHANNEL ACCOMMA0 EXT1_TEMPSENSOR_PIN
@@ -397,7 +442,7 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #include "SdFat.h"
 #endif
 
-#if ENABLE_BACKLASH_COMPENSATION && DRIVE_SYSTEM!=CARTESIAN
+#if ENABLE_BACKLASH_COMPENSATION && DRIVE_SYSTEM != CARTESIAN
 #undef ENABLE_BACKLASH_COMPENSATION
 #define ENABLE_BACKLASH_COMPENSATION false
 #endif
@@ -408,7 +453,6 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define uint32 uint32_t
 #define int32 int32_t
 
-#define IGNORE_COORDINATE 999999
 
 #undef min
 #undef max
@@ -613,6 +657,13 @@ extern int debugWaitLoop;
 #define SQRT(x) ( HAL::integerSqrt(x) )
 #else
 #define SQRT(x) sqrt(x)
+#endif
+
+#include "Drivers.h"
+
+#include "Events.h"
+#if defined(CUSTOM_EVENTS)
+#include "CustomEvents.h"
 #endif
 
 #endif

@@ -437,9 +437,17 @@ void lcdWriteByte(uint8_t c,uint8_t rs)
     WRITE(UI_DISPLAY_D5_PIN, c & 0x20);
     WRITE(UI_DISPLAY_D6_PIN, c & 0x40);
     WRITE(UI_DISPLAY_D7_PIN, c & 0x80);
+#if FEATURE_CONTROLLER == CONTROLLER_RADDS
+    HAL::delayMicroseconds(10);
+#else
     HAL::delayMicroseconds(2);
+#endif
     WRITE(UI_DISPLAY_ENABLE_PIN, HIGH);   // enable pulse must be >450ns
+#if FEATURE_CONTROLLER == CONTROLLER_RADDS
+    HAL::delayMicroseconds(10);
+#else
     HAL::delayMicroseconds(2);
+#endif
     WRITE(UI_DISPLAY_ENABLE_PIN, LOW);
 
     WRITE(UI_DISPLAY_D4_PIN, c & 0x01);
@@ -452,6 +460,52 @@ void lcdWriteByte(uint8_t c,uint8_t rs)
     WRITE(UI_DISPLAY_ENABLE_PIN, LOW);
     HAL::delayMicroseconds(100);
 }
+
+#ifdef TRY_AUTOREPAIR_LCD_ERRORS
+#define HAS_AUTOREPAIR
+/* Fast repair function for displays loosing their settings.
+  Do not call this if your display has no problems.
+*/
+void repairLCD() {
+  // Now we pull both RS and R/W low to begin commands
+    WRITE(UI_DISPLAY_RS_PIN, LOW);
+    WRITE(UI_DISPLAY_ENABLE_PIN, LOW);
+
+    //put the LCD into 4 bit mode
+    // this is according to the hitachi HD44780 datasheet
+    // figure 24, pg 46
+
+    // we start in 8bit mode, try to set 4 bit mode
+    // at this point we are in 8 bit mode but of course in this
+    // interface 4 pins are dangling unconnected and the values
+    // on them don't matter for these instructions.
+    WRITE(UI_DISPLAY_RS_PIN, LOW);
+    HAL::delayMicroseconds(20);
+    lcdWriteNibble(0x03);
+    HAL::delayMicroseconds(5000); // I have one LCD for which 4500 here was not long enough.
+    // second try
+    //lcdWriteNibble(0x03);
+    //HAL::delayMicroseconds(5000); // wait
+    // third go!
+    //lcdWriteNibble(0x03);
+    //HAL::delayMicroseconds(160);
+    // finally, set to 4-bit interface
+    lcdWriteNibble(0x02);
+    HAL::delayMicroseconds(160);
+    // finally, set # lines, font size, etc.
+    lcdCommand(LCD_4BIT | LCD_2LINE | LCD_5X7);
+    lcdCommand(LCD_INCREASE | LCD_DISPLAYSHIFTOFF);	//-	Entrymode (Display Shift: off, Increment Address Counter)
+    lcdCommand(LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKINGOFF);	//-	Display on
+    uid.lastSwitch = uid.lastRefresh = HAL::timeInMilliseconds();
+    uid.createChar(1, character_back);
+    uid.createChar(2, character_degree);
+    uid.createChar(3, character_selected);
+    uid.createChar(4, character_unselected);
+    uid.createChar(5, character_temperature);
+    uid.createChar(6, character_folder);
+    uid.createChar(7, character_ready);
+}
+#endif
 
 void initializeLCD()
 {
@@ -516,8 +570,8 @@ void initializeLCD()
 #if UI_DISPLAY_TYPE < DISPLAY_ARDUINO_LIB
 void UIDisplay::printRow(uint8_t r,char *txt,char *txt2,uint8_t changeAtCol)
 {
-    changeAtCol = RMath::min(UI_COLS,changeAtCol);
-    uint8_t col=0;
+    changeAtCol = RMath::min(UI_COLS, changeAtCol);
+    uint8_t col = 0;
 // Set row
     if(r >= UI_ROWS) return;
 #if UI_DISPLAY_TYPE == DISPLAY_I2C
@@ -627,7 +681,7 @@ void initializeLCD()
 
 #if UI_DISPLAY_TYPE == DISPLAY_U8G
 //u8glib
-#ifdef U8GLIB_ST7920
+#if defined(U8GLIB_ST7920) || defined(U8GLIB_SSD1306_SW_SPI)
 #define UI_SPI_SCK UI_DISPLAY_D4_PIN
 #define UI_SPI_MOSI UI_DISPLAY_ENABLE_PIN
 #define UI_SPI_CS UI_DISPLAY_RS_PIN
@@ -640,7 +694,7 @@ u8g_uint_t u8_tx = 0, u8_ty = 0;
 
 void u8PrintChar(char c)
 {
-    switch(c)
+    switch((uint8_t)c)
     {
     case 0x7E: // right arrow
         u8g_SetFont(&u8g, u8g_font_6x12_67_75);
@@ -720,7 +774,27 @@ void initializeLCD()
 #ifdef U8GLIB_ST7920
     u8g_InitSPI(&u8g,&u8g_dev_st7920_128x64_sw_spi,  UI_DISPLAY_D4_PIN, UI_DISPLAY_ENABLE_PIN, UI_DISPLAY_RS_PIN, U8G_PIN_NONE, U8G_PIN_NONE);
 #endif
+#ifdef U8GLIB_SSD1306_I2C
+    u8g_InitI2C(&u8g,&u8g_dev_ssd1306_128x64_i2c,U8G_I2C_OPT_NONE);
+#endif
+#ifdef U8GLIB_SSD1306_SW_SPI
+    u8g_InitSPI(&u8g,&u8g_dev_ssd1306_128x64_sw_spi,  UI_DISPLAY_D4_PIN, UI_DISPLAY_ENABLE_PIN, UI_DISPLAY_RS_PIN, U8G_PIN_NONE, U8G_PIN_NONE);
+#endif
+#ifdef U8GLIB_KS0108_FAST
+    u8g_Init8Bit(&u8g,&u8g_dev_ks0108_128x64_fast,UI_DISPLAY_D0_PIN,UI_DISPLAY_D1_PIN,UI_DISPLAY_D2_PIN,UI_DISPLAY_D3_PIN,UI_DISPLAY_D4_PIN,UI_DISPLAY_D5_PIN,UI_DISPLAY_D6_PIN,UI_DISPLAY_D7_PIN,UI_DISPLAY_ENABLE_PIN,UI_DISPLAY_CS1,UI_DISPLAY_CS2,
+                 UI_DISPLAY_DI,UI_DISPLAY_RW_PIN,UI_DISPLAY_RESET_PIN);
+#endif
+#ifdef U8GLIB_KS0108
+    u8g_Init8Bit(&u8g,&u8g_dev_ks0108_128x64,UI_DISPLAY_D0_PIN,UI_DISPLAY_D1_PIN,UI_DISPLAY_D2_PIN,UI_DISPLAY_D3_PIN,UI_DISPLAY_D4_PIN,UI_DISPLAY_D5_PIN,UI_DISPLAY_D6_PIN,UI_DISPLAY_D7_PIN,UI_DISPLAY_ENABLE_PIN,UI_DISPLAY_CS1,UI_DISPLAY_CS2,
+                 UI_DISPLAY_DI,UI_DISPLAY_RW_PIN,UI_DISPLAY_RESET_PIN);
+#endif
+#ifdef U8GLIB_ST7565_NHD_C2832_HW_SPI
+    u8g_InitHWSPI(&u8g,&u8g_dev_st7565_nhd_c12864_hw_spi,UI_DISPLAY_RS_PIN,UI_DISPLAY_D5_PIN,U8G_PIN_NONE);
+#endif
     u8g_Begin(&u8g);
+#ifdef UI_ROTATE_180
+    u8g_SetRot180(&u8g);
+#endif
     u8g_FirstPage(&u8g);
     do
     {
@@ -885,7 +959,7 @@ void UIDisplay::createChar(uint8_t location,const uint8_t PROGMEM charmap[])
 {
     location &= 0x7; // we only have 8 locations 0-7
     lcdCommand(LCD_SETCGRAMADDR | (location << 3));
-    for (int i=0; i<8; i++)
+    for (int i = 0; i < 8; i++)
     {
         lcdPutChar(pgm_read_byte(&(charmap[i])));
     }
@@ -896,7 +970,7 @@ void  UIDisplay::waitForKey()
     int nextAction = 0;
 
     lastButtonAction = 0;
-    while(lastButtonAction==nextAction)
+    while(lastButtonAction == nextAction)
     {
         uiCheckSlowKeys(nextAction);
     }
@@ -1354,6 +1428,11 @@ void UIDisplay::parse(const char *txt,bool ram)
                 break;
             }
 #endif
+			if(c2 == 'C')	 //Custom coating
+			{
+				addFloat(Printer::zBedOffset, 3, 2);
+				break;
+			}
             // Extruder output level
             if(c2 >= '0' && c2 <= '9') ivalue = pwm_pos[c2 - '0'];
 #if HAVE_HEATED_BED
@@ -1369,44 +1448,44 @@ void UIDisplay::parse(const char *txt,bool ram)
             if(c2 == 'x')
             {
 #if (X_MIN_PIN > -1) && MIN_HARDWARE_ENDSTOP_X
-                addStringOnOff(Printer::isXMinEndstopHit());
+                addStringOnOff(Endstops::xMin());
 #else
                 addStringP(ui_text_na);
 #endif
             }
             if(c2 == 'X')
 #if (X_MAX_PIN > -1) && MAX_HARDWARE_ENDSTOP_X
-                addStringOnOff(Printer::isXMaxEndstopHit());
+                addStringOnOff(Endstops::xMax());
 #else
                 addStringP(ui_text_na);
 #endif
             if(c2 == 'y')
 #if (Y_MIN_PIN > -1)&& MIN_HARDWARE_ENDSTOP_Y
-                addStringOnOff(Printer::isYMinEndstopHit());
+                addStringOnOff(Endstops::yMin());
 #else
                 addStringP(ui_text_na);
 #endif
             if(c2 == 'Y')
 #if (Y_MAX_PIN > -1) && MAX_HARDWARE_ENDSTOP_Y
-                addStringOnOff(Printer::isYMaxEndstopHit());
+                addStringOnOff(Endstops::yMax());
 #else
                 addStringP(ui_text_na);
 #endif
             if(c2 == 'z')
 #if (Z_MIN_PIN > -1) && MIN_HARDWARE_ENDSTOP_Z
-                addStringOnOff(Printer::isZMinEndstopHit());
+                addStringOnOff(Endstops::zMin());
 #else
                 addStringP(ui_text_na);
 #endif
             if(c2=='Z')
 #if (Z_MAX_PIN > -1) && MAX_HARDWARE_ENDSTOP_Z
-                addStringOnOff(Printer::isZMaxEndstopHit());
+                addStringOnOff(Endstops::zMax());
 #else
                 addStringP(ui_text_na);
 #endif
             if(c2=='P')
 #if (Z_PROBE_PIN > -1)
-                addStringOnOff(Printer::isZProbeHit());
+                addStringOnOff(Endstops::zProbe());
 #else
                 addStringP(ui_text_na);
 #endif
@@ -1959,7 +2038,7 @@ void UIDisplay::refreshPage()
             if(transition == 0)
             {
 #if UI_DISPLAY_TYPE == DISPLAY_U8G
-                if(menuLevel==0 && menuPos[0] == 0 )
+                if(menuLevel == 0 && menuPos[0] == 0 )
                 {
                     u8g_SetFont(&u8g,UI_FONT_SMALL);
                     uint8_t py = 8;
@@ -2198,6 +2277,7 @@ int UIDisplay::okAction(bool allowMoves)
         }
         sd.file.close();
         sd.fat.chdir(cwd);
+        EVENT_START_UI_ACTION(shortAction);
         switch(shortAction)
         {
         case UI_ACTION_SD_PRINT:
@@ -2489,6 +2569,7 @@ bool UIDisplay::nextPreviousAction(int16_t next, bool allowMoves)
     if(mtype == UI_MENU_TYPE_MODIFICATION_MENU || mtype == UI_MENU_TYPE_WIZARD) action = pgm_read_word(&(men->id));
     else action = activeAction;
     int8_t increment = next;
+    EVENT_START_NEXTPREVIOUS(action,increment);
     switch(action)
     {
     case UI_ACTION_FANSPEED:
@@ -2586,7 +2667,10 @@ ZPOS2:
 #if FEATURE_BABYSTEPPING
     {
         previousMillisCmd = HAL::timeInMilliseconds();
-        if((abs((int)Printer::zBabystepsMissing + (increment * BABYSTEP_MULTIPLICATOR))) < 127)
+#if UI_DYNAMIC_ENCODER_SPEED
+        increment /= dynSp; // we need fixed speeds or we get in trouble here!
+#endif
+        if((abs((int)Printer::zBabystepsMissing + (increment * BABYSTEP_MULTIPLICATOR))) < 20000)
         {
             Printer::zBabystepsMissing += increment * BABYSTEP_MULTIPLICATOR;
             zBabySteps += increment * BABYSTEP_MULTIPLICATOR;
@@ -2638,6 +2722,11 @@ ZPOS2:
         Commands::changeFlowrateMultiply(Printer::extrudeMultiply);
     }
     break;
+#if UI_BED_COATING
+    	case UI_ACTION_COATING_CUSTOM:
+		INCREMENT_MIN_MAX(Printer::zBedOffset,0.01,-1.0,199.0);
+    break;
+#endif
     case UI_ACTION_STEPPER_INACTIVE:
     {
         uint8_t inactT = stepperInactiveTime / 60000;
@@ -2655,7 +2744,7 @@ ZPOS2:
     case UI_ACTION_PRINT_ACCEL_X:
     case UI_ACTION_PRINT_ACCEL_Y:
     case UI_ACTION_PRINT_ACCEL_Z:
-#if DRIVE_SYSTEM!=DELTA
+#if DRIVE_SYSTEM != DELTA
         INCREMENT_MIN_MAX(Printer::maxAccelerationMMPerSquareSecond[action - UI_ACTION_PRINT_ACCEL_X],((action == UI_ACTION_PRINT_ACCEL_Z) ? 1 : 100),0,10000);
 #else
         INCREMENT_MIN_MAX(Printer::maxAccelerationMMPerSquareSecond[action - UI_ACTION_PRINT_ACCEL_X],100,0,10000);
@@ -2930,8 +3019,34 @@ ZPOS2:
     return true;
 }
 
+#if UI_BED_COATING
+void UIDisplay::menuAdjustHeight(const UIMenu *men,float offset){
+#if EEPROM_MODE != 0
+		//If there is something to change
+		if (EEPROM::zProbeZOffset() != offset) {
+			HAL::eprSetFloat(EPR_Z_PROBE_Z_OFFSET, offset);
+			EEPROM::storeDataIntoEEPROM(false);
+		}
+#endif
+        Printer::zBedOffset = offset;
+		//Display message
+		pushMenu(men, false);
+		BEEP_SHORT;
+		Printer::homeAxis(true, true, true);
+		Commands::printCurrentPosition(PSTR("UI_ACTION_HOMEALL "));
+		menuLevel = 0;
+		activeAction = 0;
+		UI_STATUS_UPD(UI_TEXT_PRINTER_READY);
+}
+#endif
+
 void UIDisplay::finishAction(int action)
 {
+#if UI_BED_COATING
+    if (action == UI_ACTION_COATING_CUSTOM) {
+		menuAdjustHeight(&ui_menu_coating_custom,Printer::zBedOffset);
+    }
+#endif
 }
 // Actions are events from user input. Depending on the current state, each
 // action can behave differently. Other actions do always the same like home, disable extruder etc.
@@ -3027,7 +3142,7 @@ int UIDisplay::executeAction(int action, bool allowMoves)
         case UI_ACTION_POWER:
 #if PS_ON_PIN >= 0 // avoid compiler errors when the power supply pin is disabled
             Commands::waitUntilEndOfAllMoves();
-            SET_OUTPUT(PS_ON_PIN); //GND
+            //SET_OUTPUT(PS_ON_PIN); //GND
             TOGGLE(PS_ON_PIN);
 #endif
             break;
@@ -3285,6 +3400,7 @@ int UIDisplay::executeAction(int action, bool allowMoves)
 #if FEATURE_RETRACTION
         case UI_ACTION_WIZARD_FILAMENTCHANGE:
         {
+            if(Printer::isBlockingReceive()) break;
             Printer::setJamcontrolDisabled(true);
             Com::printFLN(PSTR("important: Filament change required!"));
             Printer::setBlockingReceive(true);
@@ -3466,6 +3582,26 @@ int UIDisplay::executeAction(int action, bool allowMoves)
         case UI_ACTION_PAUSE:
             Com::printFLN(PSTR("RequestPause:"));
             break;
+#if UI_BED_COATING
+		case UI_ACTION_NOCOATING:
+			menuAdjustHeight(&ui_menu_nocoating_action,0);
+			break;
+		case UI_ACTION_BUILDTAK:
+			menuAdjustHeight(&ui_menu_buildtak_action,0.4);
+			break;
+		case UI_ACTION_KAPTON:
+			menuAdjustHeight(&ui_menu_kapton_action,0.04);
+			break;
+		case UI_ACTION_GLUESTICK:
+			menuAdjustHeight(&ui_menu_gluestick_action,0.04);
+			break;
+		case UI_ACTION_BLUETAPE:
+			menuAdjustHeight(&ui_menu_bluetape_action,0.15);
+			break;
+		case UI_ACTION_PETTAPE:
+			menuAdjustHeight(&ui_menu_pettape_action,0.09);
+			break;
+#endif
 #if FEATURE_AUTOLEVEL
         case UI_ACTION_AUTOLEVEL_ONOFF:
             Printer::setAutolevelActive(!Printer::isAutolevelActive());
@@ -3739,6 +3875,14 @@ void UIDisplay::slowAction(bool allowMoves)
     }
     if(refresh) // does lcd need a refresh?
     {
+#if defined(TRY_AUTOREPAIR_LCD_ERRORS)
+#if defined(HAS_AUTOREPAIR)
+        repairLCD();
+#else
+        #error TRY_AUTOREPAIR_LCD_ERRORS is not supported for your display type!
+#endif
+#endif
+
         if (menuLevel > 1 || Printer::isAutomount())
         {
             shift++;
