@@ -873,7 +873,7 @@ void UIDisplay::initialize()
     cwd[0] = '/';
     cwd[1] = 0;
     folderLevel = 0;
-    UI_STATUS(UI_TEXT_PRINTER_READY);
+    UI_STATUS_F(Com::translatedF(UI_TEXT_PRINTER_READY_ID));
 #if UI_DISPLAY_TYPE != NO_DISPLAY
     initializeLCD();
 #if defined(USER_KEY1_PIN) && USER_KEY1_PIN > -1
@@ -1062,7 +1062,6 @@ const float roundingTable[] PROGMEM = {0.5, 0.05, 0.005, 0.0005};
 
 UI_STRING(ui_selected,UI_TEXT_SEL);
 UI_STRING(ui_unselected,UI_TEXT_NOSEL);
-UI_STRING(ui_action,UI_TEXT_STRING_ACTION);
 
 void UIDisplay::addFloat(float number, char fixdigits, uint8_t digits)
 {
@@ -1363,7 +1362,7 @@ void UIDisplay::parse(const char *txt,bool ram)
                     if(sd.filesize < 2000000) percent = sd.sdpos * 100.0 / sd.filesize;
                     else percent = (sd.sdpos >> 8) * 100.0 / (sd.filesize >> 8);
                     addFloat(percent, 3, 1);
-                    if(col<MAX_COLS)
+                    if(col < MAX_COLS)
                         uid.printCols[col++] = '%';
                 }
                 else
@@ -1497,14 +1496,14 @@ void UIDisplay::parse(const char *txt,bool ram)
                 long tmp = seconds / 86400;
                 seconds -= tmp * 86400;
                 addInt(tmp, 5);
-                addStringP(PSTR(UI_TEXT_PRINTTIME_DAYS));
+                addStringP(Com::translatedF(UI_TEXT_PRINTTIME_DAYS_ID));
                 tmp = seconds / 3600;
                 addInt(tmp,2);
-                addStringP(PSTR(UI_TEXT_PRINTTIME_HOURS));
+                addStringP(Com::translatedF(UI_TEXT_PRINTTIME_HOURS_ID));
                 seconds -= tmp * 3600;
                 tmp = seconds / 60;
                 addInt(tmp,2,'0');
-                addStringP(PSTR(UI_TEXT_PRINTTIME_MINUTES));
+                addStringP(Com::translatedF(UI_TEXT_PRINTTIME_MINUTES_ID));
 #endif
             }
             else if(c2 == 'f')     // Filament usage
@@ -1590,13 +1589,13 @@ void UIDisplay::parse(const char *txt,bool ram)
             {
                 uint8_t hm = currHeaterForSetup->heatManager;
                 if(hm == HTR_PID)
-                    addStringP(PSTR(UI_TEXT_STRING_HM_PID));
+                    addStringP(Com::translatedF(UI_TEXT_STRING_HM_PID_ID));
                 else if(hm == HTR_DEADTIME)
-                    addStringP(PSTR(UI_TEXT_STRING_HM_DEADTIME));
+                    addStringP(Com::translatedF(UI_TEXT_STRING_HM_DEADTIME_ID));
                 else if(hm == HTR_SLOWBANG)
-                    addStringP(PSTR(UI_TEXT_STRING_HM_SLOWBANG));
+                    addStringP(Com::translatedF(UI_TEXT_STRING_HM_SLOWBANG_ID));
                 else
-                    addStringP(PSTR(UI_TEXT_STRING_HM_BANGBANG));
+                    addStringP(Com::translatedF(UI_TEXT_STRING_HM_BANGBANG_ID));
             }
 #if USE_ADVANCE
 #if ENABLE_QUADRATIC_ADVANCE
@@ -1748,7 +1747,7 @@ void UIDisplay::goDir(char *name)
     updateSDFileCount();
 #endif
 }
-
+/** write file names at current position to lcd */
 void sdrefresh(uint16_t &r,char cache[UI_ROWS][MAX_COLS+1])
 {
 #if SDSUPPORT
@@ -3020,7 +3019,7 @@ void UIDisplay::menuAdjustHeight(const UIMenu *men,float offset)
     Commands::printCurrentPosition(PSTR("UI_ACTION_HOMEALL "));
     menuLevel = 0;
     activeAction = 0;
-    UI_STATUS_UPD(UI_TEXT_PRINTER_READY);
+    UI_STATUS_UPD_F(Com::translatedF(UI_TEXT_PRINTER_READY_ID));
 }
 #endif
 
@@ -3046,7 +3045,7 @@ int UIDisplay::executeAction(int action, bool allowMoves)
     action &= 8191; // strip out higher level flags
     if(action >= 2000 && action < 3000)
     {
-        setStatusP(ui_action);
+        setStatusP(Com::translatedF(UI_TEXT_STRING_ACTION_ID));
     }
     else
         switch(action)
@@ -3135,11 +3134,11 @@ int UIDisplay::executeAction(int action, bool allowMoves)
         case UI_ACTION_LIGHTS_ONOFF:
             TOGGLE(CASE_LIGHTS_PIN);
             Printer::reportCaseLightStatus();
-            UI_STATUS(UI_TEXT_LIGHTS_ONOFF);
+            UI_STATUS_F(Com::translatedF(UI_TEXT_LIGHTS_ONOFF_ID));
             break;
 #endif
         case UI_ACTION_PREHEAT_PLA:
-            UI_STATUS(UI_TEXT_PREHEAT_PLA);
+            UI_STATUS_F(Com::translatedF(UI_TEXT_PREHEAT_PLA_ID));
             Extruder::setTemperatureForExtruder(UI_SET_PRESET_EXTRUDER_TEMP_PLA,0);
 #if NUM_EXTRUDER > 1
             Extruder::setTemperatureForExtruder(UI_SET_PRESET_EXTRUDER_TEMP_PLA,1);
@@ -3152,7 +3151,7 @@ int UIDisplay::executeAction(int action, bool allowMoves)
 #endif
             break;
         case UI_ACTION_PREHEAT_ABS:
-            UI_STATUS(UI_TEXT_PREHEAT_ABS);
+            UI_STATUS_F(Com::translatedF(UI_TEXT_PREHEAT_ABS_ID));
             Extruder::setTemperatureForExtruder(UI_SET_PRESET_EXTRUDER_TEMP_ABS,0);
 #if NUM_EXTRUDER > 1
             Extruder::setTemperatureForExtruder(UI_SET_PRESET_EXTRUDER_TEMP_ABS,1);
@@ -3165,7 +3164,7 @@ int UIDisplay::executeAction(int action, bool allowMoves)
 #endif
             break;
         case UI_ACTION_COOLDOWN:
-            UI_STATUS(UI_TEXT_COOLDOWN);
+            UI_STATUS_F(Com::translatedF(UI_TEXT_COOLDOWN_ID));
             Extruder::setTemperatureForExtruder(0, 0);
 #if NUM_EXTRUDER > 1
             Extruder::setTemperatureForExtruder(0, 1);
