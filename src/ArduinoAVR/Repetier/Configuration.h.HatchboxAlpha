@@ -79,6 +79,8 @@
 #define RETRACT_ON_PAUSE 2
 #define PAUSE_START_COMMANDS ""
 #define PAUSE_END_COMMANDS ""
+#define SHARED_EXTRUDER_HEATER 0
+#define EXTRUDER_SWITCH_XY_SPEED 100
 #define EXT0_X_OFFSET 0
 #define EXT0_Y_OFFSET 0
 #define EXT0_Z_OFFSET 0
@@ -91,6 +93,11 @@
 #define EXT0_INVERSE 0
 #define EXT0_ENABLE_PIN E0_ENABLE_PIN
 #define EXT0_ENABLE_ON 0
+#define EXT0_MIRROR_STEPPER 0
+#define EXT0_STEP2_PIN E0_STEP_PIN
+#define EXT0_DIR2_PIN E0_DIR_PIN
+#define EXT0_INVERSE2 false
+#define EXT0_ENABLE2_PIN E0_ENABLE_PIN
 #define EXT0_MAX_FEEDRATE 200
 #define EXT0_MAX_START_FEEDRATE 20
 #define EXT0_MAX_ACCELERATION 5000
@@ -114,6 +121,14 @@
 #define EXT0_DECOUPLE_TEST_PERIOD 12000
 #define EXT0_JAM_PIN -1
 #define EXT0_JAM_PULLUP 0
+
+#define EXT1_ENABLE_PIN E1_ENABLE_PIN
+#define EXT1_ENABLE_ON false
+#define EXT1_MIRROR_STEPPER 0
+#define EXT1_STEP2_PIN E0_STEP_PIN
+#define EXT1_DIR2_PIN E0_DIR_PIN
+#define EXT1_INVERSE2 false
+#define EXT1_ENABLE2_PIN E0_ENABLE_PIN
 
 #define FEATURE_RETRACTION 1
 #define AUTORETRACT_ENABLED 0
@@ -338,6 +353,19 @@
 #define USE_ADVANCE 0
 #define ENABLE_QUADRATIC_ADVANCE 0
 
+/** If the firmware is busy, it will send a busy signal to host signaling that
+ everything is fine and it only takes a bit longer to finish. That way the
+ host can keep timeout short so in case of communication errors the resulting
+ blobs are much smaller. Set to 0 to disable it. */
+#define KEEP_ALIVE_INTERVAL 2000
+
+/** Speed of board fan when on. 0 = off, 255 = max */
+#define BOARD_FAN_SPEED 255
+
+/* You can have one keypad connected via single analog pin as seen on
+ some printers with Melzi V2.0 board, 20x4 LCD and 5 buttons keypad. This must be
+ the analog pin number! */
+#define ADC_KEYPAD_PIN -1 
 
 // ################# Misc. settings ##################
 
