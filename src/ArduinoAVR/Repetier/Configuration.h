@@ -48,8 +48,7 @@ To override EEPROM settings with config settings, set EEPROM_MODE 0
 /** Number of extruders. Maximum 6 extruders. */
 #define NUM_EXTRUDER 1
 
-/** Set to 1 if all extruder motors go to 1 nozzle that mixes your colors. In that case only
-setpe per mm and heater manager settings in extruder 0 are used! */
+/** Set to 1 if all extruder motors go to 1 nozzle that mixes your colors. */
 #define MIXING_EXTRUDER 0
 
 //// The following define selects which electronics board you have. Please choose the one that matches your setup
@@ -63,6 +62,7 @@ setpe per mm and heater manager settings in extruder 0 are used! */
 // Gen6 deluxe                = 51
 // Sanguinololu up to 1.1     = 6
 // Sanguinololu 1.2 and above = 62
+// 3Drag/Velleman K8200       = 66 (experimental)
 // Open Motion Controller     = 91
 // Melzi board                = 63  // Define REPRAPPRO_HUXLEY if you have one for correct HEATER_1_PIN assignment!
 // Azteeg X1                  = 65
@@ -1502,6 +1502,27 @@ the FAN pin is not the same as for your second extruder. RAMPS e.g. has FAN_PIN 
 is also used for the heater if you have 2 extruders connected. */
 #define FEATURE_FAN_CONTROL 1
 
+/* You can have a second fan controlled by adding P1 to M106/M107 command. */
+#define FEATURE_FAN2_CONTROL 0
+//#define FAN2_PIN ORIG_FAN2_PIN
+
+/* By setting FAN_BOARD_PIN to a pin number you get a board cooler. That fan 
+goes on as soon as moves occur. Mainly to prevent overheating of stepper drivers. */
+//#undef FAN_BOARD_PIN
+//#define FAN_BOARD_PIN ORIG_FAN_PIN
+
+/* You can have one additional fan controlled by a temperature. You can set
+   set at which temperature it should turn on and at which it should reach max. speed.
+*/
+#define FAN_THERMO_PIN -1
+#define FAN_THERMO_MIN_PWM 128
+#define FAN_THERMO_MAX_PWM 255
+#define FAN_THERMO_MIN_TEMP 45
+#define FAN_THERMO_MAX_TEMP 60
+// Analog pin number or channel for due boards
+#define FAN_THERMO_THERMISTOR_PIN -1
+#define FAN_THERMO_THERMISTOR_TYPE 1
+
 /** Adds support for ESP8266 Duet web interface, PanelDue and probably some other things. 
  * This essentially adds command M36/M408 and extends M20.
  * Since it requires some memory do not enable it unless you have such a display!
@@ -1553,6 +1574,7 @@ the language can be switched any time. */
 #define LANGUAGE_FR_ACTIVE 1 // French
 #define LANGUAGE_CZ_ACTIVE 1 // Czech
 #define LANGUAGE_PL_ACTIVE 1 // Polish
+#define LANGUAGE_TR_ACTIVE 1 // Turkish
 
 /* Some displays loose their settings from time to time. Try uncommenting the
 autorepair function if this is the case. It is not supported for all display

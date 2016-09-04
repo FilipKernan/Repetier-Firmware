@@ -338,6 +338,10 @@ public:
 #if FEATURE_AUTOLEVEL
     static float autolevelTransformation[9]; ///< Transformation matrix
 #endif
+#if FAN_THERMO_PIN > -1
+	static float thermoMinTemp;
+	static float thermoMaxTemp;
+#endif
     static int16_t zBabystepsMissing;
     static float minimumSpeed;               ///< lowest allowed speed to keep integration error small
     static float minimumZSpeed;              ///< lowest allowed speed to keep integration error small
@@ -465,6 +469,7 @@ public:
     }
     /** Sets the pwm for the fan speed. Gets called by motion control ot Commands::setFanSpeed. */
     static void setFanSpeedDirectly(uint8_t speed);
+    static void setFan2SpeedDirectly(uint8_t speed);
     /** \brief Disable stepper motor for x direction. */
     static INLINE void disableXStepper()
     {
@@ -799,8 +804,8 @@ public:
     static INLINE void unsetAllSteppersDisabled()
     {
         flag0 &= ~PRINTER_FLAG0_STEPPER_DISABLED;
-#if FAN_BOARD_PIN>-1
-        pwm_pos[NUM_EXTRUDER + 1] = 255;
+#if FAN_BOARD_PIN > -1
+        pwm_pos[PWM_BOARD_FAN] = 255;
 #endif // FAN_BOARD_PIN
     }
     static INLINE bool isAnyTempsensorDefect()
@@ -1050,7 +1055,11 @@ public:
     static bool isPositionAllowed(float x,float y,float z);
     static INLINE int getFanSpeed()
     {
-        return (int)pwm_pos[NUM_EXTRUDER + 2];
+        return (int)pwm_pos[PWM_FAN1];
+    }
+    static INLINE int getFan2Speed()
+    {
+	    return (int)pwm_pos[PWM_FAN2];
     }
 #if NONLINEAR_SYSTEM
     static INLINE void setDeltaPositions(long xaxis, long yaxis, long zaxis)
@@ -1065,6 +1074,8 @@ public:
     static float runZMaxProbe();
 #endif
 #if FEATURE_Z_PROBE
+	static void startProbing(bool runScript);
+	static void finishProbing();
     static float runZProbe(bool first,bool last,uint8_t repeat = Z_PROBE_REPETITIONS,bool runStartScript = true);
     static void waitForZProbeStart();
     static float bendingCorrectionAt(float x,float y);
