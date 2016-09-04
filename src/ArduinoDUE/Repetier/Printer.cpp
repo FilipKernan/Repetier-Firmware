@@ -55,8 +55,10 @@ uint8_t Printer::flag0 = 0;
 uint8_t Printer::flag1 = 0;
 uint8_t Printer::flag2 = 0;
 uint8_t Printer::debugLevel = 6; ///< Bitfield defining debug output. 1 = echo, 2 = info, 4 = error, 8 = dry run., 16 = Only communication, 32 = No moves
-uint8_t Printer::stepsPerTimerCall = 1;
+fast8_t Printer::stepsPerTimerCall = 1;
 uint8_t Printer::menuMode = 0;
+uint8_t Printer::mode = DEFAULT_PRINTER_MODE;
+uint8_t Printer::fanSpeed = 0; // Last fan speed set with M106/M107
 float Printer::extrudeMultiplyError = 0;
 float Printer::extrusionFactor = 1.0;
 uint8_t Printer::interruptEvent = 0;
@@ -68,7 +70,7 @@ float Printer::zBedOffset = Z_PROBE_Z_OFFSET;
 #if FEATURE_AUTOLEVEL
 float Printer::autolevelTransformation[9]; ///< Transformation matrix
 #endif
-uint32_t Printer::interval;           ///< Last step duration in ticks.
+uint32_t Printer::interval = 30000;           ///< Last step duration in ticks.
 uint32_t Printer::timer;              ///< used for acceleration/deceleration timing
 uint32_t Printer::stepNumber;         ///< Step number in current move.
 #if USE_ADVANCE
@@ -169,6 +171,7 @@ flag8_t Endstops::lastState2 = 0;
 flag8_t Endstops::lastRead2 = 0;
 flag8_t Endstops::accumulator2 = 0;
 #endif
+
 void Endstops::update() {
     flag8_t newRead = 0;
 #ifdef EXTENDED_ENDSTOPS
@@ -298,7 +301,29 @@ void Printer::constrainDestinationCoords()
 #endif
 }
 #endif
-
+void Printer::setDebugLevel(uint8_t newLevel) {
+	debugLevel = newLevel;
+	Com::printFLN(PSTR("DebugLevel:"),(int)newLevel);
+}
+void Printer::toggleEcho() {
+	setDebugLevel(debugLevel ^ 32);
+}
+void Printer::toggleInfo() {
+	setDebugLevel(debugLevel ^ 2);
+}	
+void Printer::toggleErrors() {
+	setDebugLevel(debugLevel ^ 4);
+}
+void Printer::toggleDryRun() {
+	setDebugLevel(debugLevel ^ 8);
+}
+void Printer::toggleCommunication() {
+	setDebugLevel(debugLevel ^ 16);	
+}
+void Printer::toggleNoMoves() {
+	setDebugLevel(debugLevel ^ 32);
+}
+	
 bool Printer::isPositionAllowed(float x,float y,float z)
 {
     if(isNoDestinationCheck())  return true;
@@ -313,6 +338,35 @@ bool Printer::isPositionAllowed(float x,float y,float z)
         Commands::printCurrentPosition(PSTR("isPositionAllowed "));
     }
     return allowed;
+}
+
+void Printer::setFanSpeedDirectly(uint8_t speed) {
+#if FAN_PIN>-1 && FEATURE_FAN_CONTROL
+    if(pwm_pos[NUM_EXTRUDER + 2] == speed)
+        return;
+#if FAN_KICKSTART_TIME
+    if(fanKickstart == 0 && speed > pwm_pos[NUM_EXTRUDER + 2] && speed < 85)
+    {
+         if(pwm_pos[NUM_EXTRUDER + 2]) fanKickstart = FAN_KICKSTART_TIME / 100;
+         else                          fanKickstart = FAN_KICKSTART_TIME / 25;
+    }
+#endif
+    pwm_pos[NUM_EXTRUDER + 2] = speed;
+#endif
+}
+
+void Printer::reportPrinterMode() {
+    switch(Printer::mode) {
+    case PRINTER_MODE_FFF:
+        Com::printFLN(Com::tPrinterModeFFF);
+        break;
+    case PRINTER_MODE_LASER:
+        Com::printFLN(Com::tPrinterModeLaser);
+        break;
+    case PRINTER_MODE_CNC:
+        Com::printFLN(Com::tPrinterModeCNC);
+        break;
+    }
 }
 void Printer::updateDerivedParameter()
 {
@@ -814,7 +868,7 @@ void Printer::setup()
 #endif
 #endif
 
-    //endstop pullups
+    //end stop pull ups
 #if MIN_HARDWARE_ENDSTOP_X
 #if X_MIN_PIN > -1
     SET_INPUT(X_MIN_PIN);
@@ -937,7 +991,7 @@ void Printer::setup()
     SET_OUTPUT(EXT5_EXTRUDER_COOLER_PIN);
     WRITE(EXT5_EXTRUDER_COOLER_PIN, LOW);
 #endif
-// Initalize jam sensors
+// Initialize jam sensors
 #if defined(EXT0_JAM_PIN) && EXT0_JAM_PIN > -1
     SET_INPUT(EXT0_JAM_PIN);
     PULLUP(EXT0_JAM_PIN, EXT0_JAM_PULLUP);
@@ -970,6 +1024,13 @@ void Printer::setup()
     SET_OUTPUT(EXP_VOLTAGE_LEVEL_PIN);
     WRITE(EXP_VOLTAGE_LEVEL_PIN,UI_VOLTAGE_LEVEL);
 #endif // UI_VOLTAGE_LEVEL
+#if defined(SUPPORT_LASER) && SUPPORT_LASER
+    LaserDriver::initialize();
+#endif // defined
+#if defined(SUPPORT_CNC) && SUPPORT_CNC
+    CNCDriver::initialize();
+#endif // defined
+
 #if GANTRY
     Printer::motorX = 0;
     Printer::motorYorZ = 0;
@@ -1034,14 +1095,14 @@ void Printer::setup()
     Com::printFLN(Com::tStart);
     HAL::showStartReason();
     Extruder::initExtruder();
-    // sets autoleveling in eeprom init
+    // sets auto leveling in eeprom init
     EEPROM::init(); // Read settings from eeprom if wanted
     UI_INITIALIZE;
     for(uint8_t i = 0; i < E_AXIS_ARRAY; i++)
     {
         currentPositionSteps[i] = 0;
-        currentPosition[i] = 0.0;
     }
+    currentPosition[X_AXIS] = currentPosition[Y_AXIS]= currentPosition[Z_AXIS] =  0.0;
 //setAutolevelActive(false); // fixme delete me
     //Commands::printCurrentPosition(PSTR("Printer::setup 0 "));
 #if DISTORTION_CORRECTION
@@ -1067,7 +1128,7 @@ void Printer::setup()
     HAL::startWatchdog();
 #endif // FEATURE_WATCHDOG
 #if SDSUPPORT
-    sd.initsd();
+    sd.mount();
 #endif
 #if FEATURE_SERVO                   // set servos to neutral positions at power_up
   #if defined(SERVO0_NEUTRAL_POS) && SERVO0_NEUTRAL_POS >= 500
@@ -1084,6 +1145,9 @@ void Printer::setup()
   #endif
 #endif
     EVENT_INITIALIZE;
+#ifdef STARTUP_GCODE
+GCode::executeFString(Com::tStartupGCode);
+#endif
 #if EEPROM_MODE != 0 && UI_DISPLAY_TYPE != NO_DISPLAY
     if(EEPROM::getStoredLanguage() == 254) {
             Com::printFLN(PSTR("Needs language selection"));
@@ -1109,7 +1173,7 @@ void Printer::defaultLoopActions()
         if(stepperInactiveTime != 0 && curtime >  stepperInactiveTime )
             Printer::kill(true);
     }
-#if SDCARDDETECT>-1 && SDSUPPORT
+#if SDCARDDETECT > -1 && SDSUPPORT
     sd.automount();
 #endif
     DEBUG_MEMORY;
@@ -1126,7 +1190,7 @@ void Printer::MemoryPosition()
 
 void Printer::GoToMemoryPosition(bool x, bool y, bool z, bool e, float feed)
 {
-    if(memoryF < 0) return; // Not stored before call, so we ignor eit
+    if(memoryF < 0) return; // Not stored before call, so we ignore it
     bool all = !(x || y || z);
     moveToReal((all || x ? (lastCmdPos[X_AXIS] = memoryX) : IGNORE_COORDINATE)
                ,(all || y ?(lastCmdPos[Y_AXIS] = memoryY) : IGNORE_COORDINATE)
@@ -1425,13 +1489,21 @@ void Printer::homeZAxis() // cartesian homing
 #endif
         PrintLine::moveRelativeDistanceInSteps(0,0,axisStepsPerMM[Z_AXIS] * 2 * ENDSTOP_Z_BACK_MOVE * Z_HOME_DIR,0,homingFeedrate[Z_AXIS] / ENDSTOP_Z_RETEST_REDUCTION_FACTOR,true,true);
         setHoming(false);
+		int32_t zCorrection = 0;
+#if MIN_HARDWARE_ENDSTOP_Z && FEATURE_Z_PROBE && Z_PROBE_PIN==Z_MIN_PIN
+		// Fix error from z probe testing
+		zCorrection -= axisStepsPerMM[Z_AXIS]*EEPROM::zProbeHeight();
+#endif		
 #if defined(ENDSTOP_Z_BACK_ON_HOME)
+		// If we want to go up a bit more for some reason
         if(ENDSTOP_Z_BACK_ON_HOME > 0)
-            PrintLine::moveRelativeDistanceInSteps(0,0,axisStepsPerMM[Z_AXIS]*-ENDSTOP_Z_BACK_ON_HOME * Z_HOME_DIR,0,homingFeedrate[Z_AXIS],true,false);
+		zCorrection -= axisStepsPerMM[Z_AXIS]*ENDSTOP_Z_BACK_ON_HOME * Z_HOME_DIR;
 #endif
 #if Z_HOME_DIR < 0
-        PrintLine::moveRelativeDistanceInSteps(0,0,axisStepsPerMM[Z_AXIS] * -Printer::zBedOffset * Z_HOME_DIR,0,homingFeedrate[Z_AXIS],true,false);
+		// Fix bed coating
+		zCorrection += axisStepsPerMM[Z_AXIS] * Printer::zBedOffset;
 #endif
+        PrintLine::moveRelativeDistanceInSteps(0,0,zCorrection,0,homingFeedrate[Z_AXIS],true,false);
         currentPositionSteps[Z_AXIS] = ((Z_HOME_DIR == -1) ? zMinSteps : zMaxSteps - Printer::zBedOffset * axisStepsPerMM[Z_AXIS]);
 #if NUM_EXTRUDER > 0
         currentPositionSteps[Z_AXIS] -= Extruder::current->zOffset;
@@ -1539,7 +1611,7 @@ void Printer::homeAxis(bool xaxis,bool yaxis,bool zaxis) // home non-delta print
         Extruder::setTemperatureForExtruder(actTemp[Extruder::current->id], Extruder::current->id, false, actTemp[Extruder::current->id] > MAX_ROOM_TEMPERATURE);
 #endif
         if(Z_HOME_DIR < 0) startZ = Printer::zMin;
-        else startZ = Printer::zMin + Printer::zLength;
+        else startZ = Printer::zMin + Printer::zLength - zBedOffset;
     }
 }
 #endif
@@ -1561,7 +1633,13 @@ void Printer::homeAxis(bool xaxis,bool yaxis,bool zaxis) // home non-delta print
     }
 #endif
     updateCurrentPosition(true);
+#if defined(Z_UP_AFTER_HOME) && Z_HOME_DIR < 0
+	//PrintLine::moveRelativeDistanceInSteps(0,0,axisStepsPerMM[Z_AXIS]*Z_UP_AFTER_HOME * Z_HOME_DIR,0,homingFeedrate[Z_AXIS],true,false);
+	if(zaxis)
+		startZ = Z_UP_AFTER_HOME;
+#endif
     moveToReal(startX, startY, startZ, IGNORE_COORDINATE, homingFeedrate[X_AXIS]);
+	updateCurrentPosition(true);
     UI_CLEAR_STATUS
     Commands::printCurrentPosition(PSTR("homeAxis "));
 }
@@ -1572,7 +1650,6 @@ void Printer::zBabystep()
     bool dir = zBabystepsMissing > 0;
     if(dir) zBabystepsMissing--;
     else zBabystepsMissing++;
-    Com::printFLN(PSTR("bsdir:"),dir);
 #if DRIVE_SYSTEM == DELTA
     Printer::enableXStepper();
     Printer::enableYStepper();
@@ -1686,14 +1763,14 @@ float Printer::runZProbe(bool first,bool last,uint8_t repeat,bool runStartScript
 #if NONLINEAR_SYSTEM
     realDeltaPositionSteps[Z_AXIS] = currentDeltaPositionSteps[Z_AXIS]; // update real
 #endif
-    int32_t updateZ = 0;
+    //int32_t updateZ = 0;
     waitForZProbeStart();
     for(int8_t r = 0; r < repeat; r++)
     {
         probeDepth = 2 * (Printer::zMaxSteps - Printer::zMinSteps); // probe should always hit within this distance
         stepsRemainingAtZHit = -1; // Marker that we did not hit z probe
-        int32_t offx = axisStepsPerMM[X_AXIS] * EEPROM::zProbeXOffset();
-        int32_t offy = axisStepsPerMM[Y_AXIS] * EEPROM::zProbeYOffset();
+        //int32_t offx = axisStepsPerMM[X_AXIS] * EEPROM::zProbeXOffset();
+        //int32_t offy = axisStepsPerMM[Y_AXIS] * EEPROM::zProbeYOffset();
         //PrintLine::moveRelativeDistanceInSteps(-offx,-offy,0,0,EEPROM::zProbeXYSpeed(),true,true);
         setZProbingActive(true);
         PrintLine::moveRelativeDistanceInSteps(0, 0, -probeDepth, 0, EEPROM::zProbeSpeed(), true, true);
@@ -1912,7 +1989,9 @@ void Printer::handleInterruptEvent() {
         UI_ERROR_P(Com::translatedF(UI_TEXT_EXTRUDER_JAM_ID));
 #if JAM_ACTION == 1 // start dialog
         Printer::setUIErrorMessage(false);
+#if UI_DISPLAY_TYPE != NO_DISPLAY
         uid.executeAction(UI_ACTION_WIZARD_JAM_EOF, true);
+#endif
 #elif JAM_ACTION == 2 // pause host/print
 #if SDSUPPORT
         if(sd.sdmode == 2) {
@@ -2254,6 +2333,213 @@ int32_t Distortion::correct(int32_t x, int32_t y, int32_t z) const
 }
 
 #endif // DISTORTION_CORRECTION
+
+#if JSON_OUTPUT
+void Printer::showJSONStatus(int type) {
+    bool firstOccurrence;
+
+    Com::printF(PSTR("{\"status\": \""));
+    if (PrintLine::linesCount == 0) {
+        Com::print('I'); // IDLING
+#if SDSUPPORT
+    } else if (sd.sdactive) {
+        Com::print('P'); // SD PRINTING
+#endif
+    } else {
+        Com::print('B'); // SOMETHING ELSE, BUT SOMETHIG
+    }
+    Com::printF(PSTR("\",\"coords\": {"));
+    Com::printF(PSTR("\"axesHomed\":["));
+    Com::printF(isHomed() ? PSTR("1, 1, 1") : PSTR("0, 0, 0"));
+    Com::printF(PSTR("],\"extr\":["));
+    firstOccurrence = true;
+    for (int i = 0; i < NUM_EXTRUDER; i++) {
+        if (!firstOccurrence) Com::print(',');
+        Com::print(extruder[i].extrudePosition / extruder[i].stepsPerMM);
+        firstOccurrence = false;
+    }
+    Com::printF(PSTR("],\"xyz\":["));
+    Com::print(currentPosition[X_AXIS]); // X
+    Com::print(',');
+    Com::print(currentPosition[Y_AXIS]); // Y
+    Com::print(',');
+    Com::print(currentPosition[Z_AXIS]); // Z
+    Com::printF(PSTR("]},\"currentTool\":"));
+    Com::print(Extruder::current->id);
+    Com::printF(PSTR(",\"params\": {\"atxPower\":"));
+    Com::print(isPowerOn()?'1':'0');
+    Com::printF(PSTR(",\"fanPercent\":"));
+    Com::print(getFanSpeed());
+    Com::printF(PSTR(",\"speedFactor\":"));
+    Com::print(Printer::feedrateMultiply);
+    Com::printF(PSTR(",\"extrFactors\":["));
+    firstOccurrence = true;
+    for (int i = 0; i < NUM_EXTRUDER; i++) {
+        if (!firstOccurrence) Com::print(',');
+        Com::print((int)Printer::extrudeMultiply); // Really *100? 100 is normal
+        firstOccurrence = false;
+    }
+    Com::printF(PSTR("]},"));
+    // SEQ??
+    Com::printF(PSTR("\"temps\": {"));
+#if HAVE_HEATED_BED
+    Com::printF(PSTR("\"bed\": {\"current\":"));
+    Com::print(heatedBedController.currentTemperatureC);
+    Com::printF(PSTR(",\"active\":"));
+    Com::print(heatedBedController.targetTemperatureC);
+    Com::printF(PSTR(",\"state\":"));
+    Com::print(heatedBedController.targetTemperatureC > 0 ? '2' : '1');
+    Com::printF(PSTR("},"));
+#endif
+    Com::printF(PSTR("\"heads\": {\"current\": ["));
+    firstOccurrence = true;
+    for (int i = 0; i < NUM_EXTRUDER; i++) {
+        if (!firstOccurrence) Com::print(',');
+        Com::print(extruder[i].tempControl.currentTemperatureC);
+        firstOccurrence = false;
+    }
+    Com::printF(PSTR("],\"active\": ["));
+    firstOccurrence = true;
+    for (int i = 0; i < NUM_EXTRUDER; i++) {
+        if (!firstOccurrence) Com::print(',');
+        Com::print(extruder[i].tempControl.targetTemperatureC);
+        firstOccurrence = false;
+    }
+    Com::printF(PSTR("],\"state\": ["));
+    firstOccurrence = true;
+    for (int i = 0; i < NUM_EXTRUDER; i++) {
+        if (!firstOccurrence) Com::print(',');
+        Com::print(extruder[i].tempControl.targetTemperatureC > EXTRUDER_FAN_COOL_TEMP?'2':'1');
+        firstOccurrence = false;
+    }
+    Com::printF(PSTR("]}},\"time\":"));
+    Com::print(HAL::timeInMilliseconds());
+
+    switch (type) {
+        default:
+        case 0:
+        case 1:
+            break;
+        case 2:
+            // UNTIL PRINT ESTIMATE TIMES ARE IMPLEMENTED
+            // NO DURATION INFO IS SUPPORTED
+            Com::printF(PSTR(",\"coldExtrudeTemp\":0,\"coldRetractTemp\":0.0,\"geometry\":\""));
+#if (DRIVE_SYSTEM == DELTA)
+            Com::printF(PSTR("delta"));
+#elif (DRIVE_SYSTEM == CARTESIAN)
+            Com::printF(PSTR("cartesian"));
+#elif ((DRIVE_SYSTEM == XY_GANTRY) || (DRIVE_SYSTEM == YX_GANTRY))
+            Com::printF(PSTR("coreXY"));
+#elif (DRIVE_SYSTEM == XZ_GANTRY)
+            Com::printF(PSTR("coreXZ"));
+#endif
+            Com::printF(PSTR("\",\"name\":\""));
+            Com::printF(PSTR(UI_PRINTER_NAME));
+            Com::printF(PSTR("\",\"tools\":["));
+            firstOccurrence = true;
+            for (int i = 0; i < NUM_EXTRUDER; i++) {
+                if (!firstOccurrence) Com::print(',');
+                Com::printF(PSTR("{\"number\":"));
+                Com::print(i);
+                Com::printF(PSTR(",\"heaters\":[1],\"drives\":[1]"));
+                Com::print('}');
+                firstOccurrence = false;
+            }
+            Com::printFLN(PSTR("]"));
+            break;
+        case 3:
+            Com::printF(PSTR(",\"currentLayer\":"));
+#if SDSUPPORT
+            if (sd.sdactive && sd.fileInfo.layerHeight > 0) { // ONLY CAN TELL WHEN SD IS PRINTING
+                Com::print((int) (currentPosition[Z_AXIS] / sd.fileInfo.layerHeight));
+            } else Com::print('0');
+#else
+            Com::printF(PSTR("-1"));
+#endif
+            Com::printF(PSTR("\",extrRaw\":["));
+            firstOccurrence = true;
+            for (int i = 0; i < NUM_EXTRUDER; i++) {
+                if (!firstOccurrence) Com::print(',');
+                Com::print(extruder[i].extrudePosition * Printer::extrudeMultiply);
+                firstOccurrence = false;
+            }
+            Com::printF(PSTR("],"));
+#if SDSUPPORT
+            if (sd.sdactive) {
+                Com::printF(PSTR("\"fractionPrinted\":"));
+                float fraction;
+                if (sd.filesize < 2000000) fraction = sd.sdpos / sd.filesize;
+                else fraction = (sd.sdpos >> 8) / (sd.filesize >> 8);
+                Com::print((float) floorf(fraction * 1000) / 1000); // ONE DECIMAL, COULD BE DONE BY SHIFTING, BUT MEH
+                Com::print(',');
+            }
+#endif
+            Com::printF(PSTR("\"firstLayerHeight\":"));
+#if SDSUPPORT
+            if (sd.sdactive) {
+                Com::print(sd.fileInfo.layerHeight);
+            } else Com::print('0');
+#else
+            Com::print('0');
+#endif
+            break;
+        case 4:
+        case 5:
+            Com::printF(PSTR(",\"axisMins\":["));
+            Com::print((int) X_MIN_POS);
+            Com::print(',');
+            Com::print((int) Y_MIN_POS);
+            Com::print(',');
+            Com::print((int) Z_MIN_POS);
+            Com::printF(PSTR("],\"axisMaxes\":["));
+            Com::print((int) X_MAX_LENGTH);
+            Com::print(',');
+            Com::print((int) Y_MAX_LENGTH);
+            Com::print(',');
+            Com::print((int) Z_MAX_LENGTH);
+            Com::printF(PSTR("],\"accelerations\":["));
+            Com::print(maxAccelerationMMPerSquareSecond[X_AXIS]);
+            Com::print(',');
+            Com::print(maxAccelerationMMPerSquareSecond[Y_AXIS]);
+            Com::print(',');
+            Com::print(maxAccelerationMMPerSquareSecond[Z_AXIS]);
+            for (int i = 0; i < NUM_EXTRUDER; i++) {
+                Com::print(',');
+                Com::print(extruder[i].maxAcceleration);
+            }
+            Com::printF(PSTR("],\"firmwareElectronics\":\""));
+#ifdef RAMPS_V_1_3
+            Com::printF(PSTR("RAMPS"));
+#elif (CPU_ARCH == ARCH_ARM)
+            Com::printF(PSTR("Arduino Due"));
+#else
+            Com::printF(PSTR("AVR"));
+#endif
+            Com::printF(PSTR("\",\"firmwareName\":\"Repetier\",\"firmwareVersion\":\""));
+            Com::printF(PSTR(REPETIER_VERSION));
+            Com::printF(PSTR("\",\"minFeedrates\":[0,0,0"));
+            for (int i = 0; i < NUM_EXTRUDER; i++) {
+                Com::printF(PSTR(",0"));
+            }
+            Com::printF(PSTR("],\"maxFeedrates\":["));
+            Com::print(maxFeedrate[X_AXIS]);
+            Com::print(',');
+            Com::print(maxFeedrate[Y_AXIS]);
+            Com::print(',');
+            Com::print(maxFeedrate[Z_AXIS]);
+            for (int i = 0; i < NUM_EXTRUDER; i++) {
+                Com::print(',');
+                Com::print(extruder[i].maxFeedrate);
+            }
+            Com::printFLN(PSTR("]"));
+            break;
+    }
+
+    Com::printFLN(PSTR("}"));
+}
+
+
+#endif // JSON_OUTPUT
 
 #if defined(CUSTOM_EVENTS)
 #include "CustomEventsImpl.h"

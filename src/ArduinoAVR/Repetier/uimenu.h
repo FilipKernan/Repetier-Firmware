@@ -118,7 +118,7 @@ random stuff
 %on : current extruder number (1,2,3...)
 %oS : servo position
 %oY : babysteps counter
-%oC : Bed coating thickness
+%BC : Bed coating thickness
 
 stops
 %sx : State of x min endstop.
@@ -144,6 +144,11 @@ extruder position
 %x2 : Z position
 %x3 : Current extruder position
 %x4 : Printed since temperature on in meters (for filament usage)
+
+Print offsets
+%T0 : X offset
+%T1 : Y offset
+%T2 : Z offset
 
 extruder parameters
 %X0..9 : Extruder selected marker
@@ -266,7 +271,7 @@ for 2 row displays. You can add additional pages or change the default pages lik
  #if NUM_EXTRUDER > 0
    UI_PAGE4_T(ui_page1,UI_TEXT_PAGE_EXTRUDER_ID,UI_TEXT_ACTION_ZPOSITION4A_ID,UI_TEXT_PAGE_BUFFER_ID,UI_TEXT_STATUS_ID)
    #else
-   UI_PAGE4_T(ui_page1,UI_TEXT_EMPTY_EN,UI_TEXT_ACTION_ZPOSITION4A_ID,UI_TEXT_PAGE_BUFFER_ID,UI_TEXT_STATUS_ID)
+   UI_PAGE4_T(ui_page1,UI_TEXT_EMPTY_ID,UI_TEXT_ACTION_ZPOSITION4A_ID,UI_TEXT_PAGE_BUFFER_ID,UI_TEXT_STATUS_ID)
    #endif
  #endif
   UI_PAGE4_T(ui_page2,UI_TEXT_ACTION_XPOSITION4A_ID,UI_TEXT_ACTION_YPOSITION4A_ID,UI_TEXT_ACTION_ZPOSITION4A_ID,UI_TEXT_STATUS_ID)
@@ -460,7 +465,7 @@ UI_MENU_ACTIONCOMMAND_T(ui_menu_back,UI_TEXT_BACK_ID,UI_ACTION_BACK)
 #define ADD_LANG_CZ
 #endif // LANGUAGE_CZ_ACTIVE
 #if LANGUAGE_PL_ACTIVE
-    UI_MENU_ACTIONCOMMAND(ui_menu_setlang_pl,"Polskie",UI_ACTION_LANGUAGE_PL | UI_ACTION_TOPMENU)
+    UI_MENU_ACTIONCOMMAND(ui_menu_setlang_pl,"Polski",UI_ACTION_LANGUAGE_PL | UI_ACTION_TOPMENU)
 #if FIRSTLANG
 #define ADD_LANG_PL &ui_menu_setlang_pl
 #undef FIRSTLANG
@@ -564,13 +569,20 @@ UI_MENU_ACTIONSELECTOR_T(ui_menu_go_zfast_notest,UI_TEXT_Z_POS_FAST_ID,ui_menu_z
   #define SERVOPOS_COUNT 0
   #define SERVOPOS_ENTRY
 #endif
+// Offsets menu
+UI_MENU_CHANGEACTION_T(ui_menu_off_xpos,UI_TEXT_X_OFFSET_ID,UI_ACTION_XOFF)
+UI_MENU_CHANGEACTION_T(ui_menu_off_ypos,UI_TEXT_Y_OFFSET_ID,UI_ACTION_YOFF)
+UI_MENU_CHANGEACTION_T(ui_menu_off_zpos,UI_TEXT_Z_OFFSET_ID,UI_ACTION_ZOFF)
+#define UI_MENU_OFFSETS {UI_MENU_ADDCONDBACK &ui_menu_off_xpos,&ui_menu_off_ypos,&ui_menu_off_zpos}
+UI_MENU(ui_menu_offsets,UI_MENU_OFFSETS,UI_MENU_BACKCNT+3)
+UI_MENU_SUBMENU_T(ui_menu_go_offsets, UI_TEXT_OFFSETS_ID,ui_menu_offsets)
 
 #if DRIVE_SYSTEM != DELTA     //Positioning menu for non-delta
-#define UI_MENU_POSITIONS {UI_MENU_ADDCONDBACK &ui_menu_home_all,&ui_menu_home_x,&ui_menu_home_y,&ui_menu_home_z UI_SPEED_X UI_SPEED_Y UI_SPEED_Z ,&ui_menu_go_epos SERVOPOS_ENTRY}
-UI_MENU(ui_menu_positions,UI_MENU_POSITIONS,5 + 3 * UI_SPEED + UI_MENU_BACKCNT + SERVOPOS_COUNT)
+#define UI_MENU_POSITIONS {UI_MENU_ADDCONDBACK &ui_menu_home_all,&ui_menu_home_x,&ui_menu_home_y,&ui_menu_home_z UI_SPEED_X UI_SPEED_Y UI_SPEED_Z ,&ui_menu_go_epos SERVOPOS_ENTRY,&ui_menu_go_offsets}
+UI_MENU(ui_menu_positions,UI_MENU_POSITIONS,6 + 3 * UI_SPEED + UI_MENU_BACKCNT + SERVOPOS_COUNT)
 #else                   //Positioning menu for delta (removes individual x,y,z homing)
-#define UI_MENU_POSITIONS {UI_MENU_ADDCONDBACK &ui_menu_home_all  UI_SPEED_X UI_SPEED_Y UI_SPEED_Z ,&ui_menu_go_epos SERVOPOS_ENTRY}
-UI_MENU(ui_menu_positions,UI_MENU_POSITIONS,2 + 3 * UI_SPEED + UI_MENU_BACKCNT + SERVOPOS_COUNT)
+#define UI_MENU_POSITIONS {UI_MENU_ADDCONDBACK &ui_menu_home_all  UI_SPEED_X UI_SPEED_Y UI_SPEED_Z ,&ui_menu_go_epos SERVOPOS_ENTRY,&ui_menu_go_offsets}
+UI_MENU(ui_menu_positions,UI_MENU_POSITIONS,3 + 3 * UI_SPEED + UI_MENU_BACKCNT + SERVOPOS_COUNT)
 #endif
 
 // **** Delta calibration menu
@@ -591,7 +603,6 @@ UI_MENU(ui_menu_level,UI_MENU_LEVEL,4+3*UI_SPEED+UI_MENU_BACKCNT)
 #endif
 
 // **** Extruder menu
-
 UI_MENU_CHANGEACTION_T(ui_menu_ext_temp0,UI_TEXT_EXTR0_TEMP_ID,UI_ACTION_EXTRUDER0_TEMP)
 #if NUM_EXTRUDER > 1 && MIXING_EXTRUDER == 0
 UI_MENU_CHANGEACTION_T(ui_menu_ext_temp1,UI_TEXT_EXTR1_TEMP_ID,UI_ACTION_EXTRUDER1_TEMP)
@@ -940,10 +951,14 @@ UI_MENU_CHANGEACTION_T(ui_menu_ext_wait_units,      UI_TEXT_EXTR_WAIT_RETRACT_UN
 #define UI_MENU_ADV_CNT 0
 #define UI_MENU_ADVANCE
 #if USE_ADVANCE
+#undef UI_MENU_ADV_CNT
 #define UI_MENU_ADV_CNT 1
+#undef UI_MENU_ADVANCE
 #define UI_MENU_ADVANCE ,&ui_menu_cext_advancel
 #if ENABLE_QUADRATIC_ADVANCE
+#undef UI_MENU_ADV_CNT
 #define UI_MENU_ADV_CNT 2
+#undef UI_MENU_ADVANCE
 #define UI_MENU_ADVANCE ,&ui_menu_cext_advancel,&ui_menu_cext_advancek
 UI_MENU_CHANGEACTION_T(ui_menu_cext_advancek,UI_TEXT_EXTR_ADVANCE_K_ID,UI_ACTION_ADVANCE_K)
 #endif
