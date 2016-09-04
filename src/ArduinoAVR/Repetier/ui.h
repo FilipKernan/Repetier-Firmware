@@ -232,6 +232,8 @@ What display type do you use?
 #define UI_ACTION_LANGUAGE_FR           1707
 #define UI_ACTION_LANGUAGE_CZ           1708
 #define UI_ACTION_LANGUAGE_PL           1709
+#define UI_ACTION_LANGUAGE_TR           1710
+#define UI_ACTION_LANGUAGE_FI           1711
 
 //after code add by xky 
 #define UI_ACTION_DELTA_ROD              1301
@@ -742,6 +744,7 @@ void uiCheckSlowKeys(uint16_t &action) {}
 #define UI_ENCODER_B 44
 #define UI_ENCODER_CLICK 33
 #define UI_INVERT_MENU_DIRECTION 1
+#define UI_RESET_PIN -1
 
 #elif MOTHERBOARD == 80 // Rumba has different pins as RAMPS!
 
@@ -863,7 +866,9 @@ void uiCheckSlowKeys(uint16_t &action) {}
 #if FEATURE_CONTROLLER == CONTROLLER_BAM_DICE_DUE
 #define UI_ENCODER_SPEED 2
 #endif
+#ifndef UI_INVERT_MENU_DIRECTION
 #define UI_INVERT_MENU_DIRECTION 0
+#endif
 
 #ifdef UI_MAIN
 void uiInitKeys() {
@@ -1662,7 +1667,7 @@ void uiCheckSlowKeys(uint16_t &action) {}
 #endif
 #endif // CONTROLLER_GATE_3NOVATICA
 
-#if FEATURE_CONTROLLER == CONTROLLER_SPARKLCD
+#if FEATURE_CONTROLLER == CONTROLLER_SPARKLCD || FEATURE_CONTROLLER == CONTROLLER_SPARKLCD_ADAPTER
 #if MOTHERBOARD != 402
 #error This config only works with RADDS motherboard!
 #endif
@@ -1674,7 +1679,6 @@ void uiCheckSlowKeys(uint16_t &action) {}
 
 //select font size
 #define UI_FONT_6X10 //default font
-#ifdef UI_FONT_6X10
 #define UI_FONT_WIDTH 6
 #define UI_FONT_HEIGHT 10
 #define UI_FONT_SMALL_HEIGHT 7
@@ -1683,36 +1687,47 @@ void uiCheckSlowKeys(uint16_t &action) {}
 #define UI_FONT_SMALL_WIDTH 5 //smaller font for status display
 #undef UI_ANIMATION
 #define UI_ANIMATION 0  // Animations are too slow
-#endif
+#define UI_DELAYPERCHAR		  50
+#define UI_HAS_KEYS 1
+#define UI_HAS_BACK_KEY 0
+#define UI_INVERT_MENU_DIRECTION 0
+#define UI_HAS_I2C_ENCODER 0
+#define UI_ENCODER_SPEED 2
 
 //calculate rows and cols available with current font
 #define UI_COLS (UI_LCD_WIDTH/UI_FONT_WIDTH)
 #define UI_ROWS (UI_LCD_HEIGHT/UI_FONT_HEIGHT)
+#define UI_DISPLAY_D0_PIN		-1
+#define UI_DISPLAY_D1_PIN		-1
+#define UI_DISPLAY_D2_PIN		-1
+#define UI_DISPLAY_D3_PIN		-1
+#define UI_DISPLAY_D5_PIN		-1
+#define UI_DISPLAY_D6_PIN		-1
+#define UI_DISPLAY_D7_PIN		-1
+
+#if FEATURE_CONTROLLER == CONTROLLER_SPARKLCD
 // PINK.1, 88, D_RS
 #define UI_DISPLAY_RS_PIN		25		
 #define UI_DISPLAY_RW_PIN		-1
 // PINK.3, 86, D_E
 #define UI_DISPLAY_ENABLE_PIN	        27		
 // PINF.5, 92, D_D4
-#define UI_DISPLAY_D0_PIN		-1		
-// PINK.2, 87, D_D5
-#define UI_DISPLAY_D1_PIN		-1		
-#define UI_DISPLAY_D2_PIN		-1	
-#define UI_DISPLAY_D3_PIN		-1	
 	// PINF.5, 92, D_D4
 #define UI_DISPLAY_D4_PIN		29	
-#define UI_DISPLAY_D5_PIN		-1
-#define UI_DISPLAY_D6_PIN		-1
-#define UI_DISPLAY_D7_PIN		-1
-#define UI_DELAYPERCHAR		   50
-#define UI_HAS_KEYS 1
-#define UI_HAS_BACK_KEY 0
-#define UI_INVERT_MENU_DIRECTION 0
-#define UI_HAS_I2C_ENCODER 0
-#define UI_ENCODER_SPEED 2
 #define UI_ENCODER_A 35
 #define UI_ENCODER_B 33
 #define UI_ENCODER_CLICK 37
+#else
+// PINK.1, 88, D_RS
+#define UI_DISPLAY_RS_PIN		44
+#define UI_DISPLAY_RW_PIN		-1
+// PINK.3, 86, D_E
+#define UI_DISPLAY_ENABLE_PIN	       45
+#define UI_DISPLAY_D4_PIN		46
+#define UI_ENCODER_A 52
+#define UI_ENCODER_B 50
+#define UI_ENCODER_CLICK 48
+#endif
 
 #ifdef UI_MAIN
 void uiInitKeys() {

@@ -1845,7 +1845,7 @@ void UIDisplay::refreshPage()
     uint8_t mtype = UI_MENU_TYPE_INFO;
     char cache[UI_ROWS][MAX_COLS + 1];
     adjustMenuPos();
-#if UI_AUTORETURN_TO_MENU_AFTER!=0
+#if UI_AUTORETURN_TO_MENU_AFTER != 0
     // Reset timeout on menu back when user active on menu
     if (uid.encoderLast != encoderStartScreen)
         ui_autoreturn_time = HAL::timeInMilliseconds() + UI_AUTORETURN_TO_MENU_AFTER;
@@ -2035,18 +2035,18 @@ void UIDisplay::refreshPage()
                 cache[1][0] = '\x0a'; //off
 #endif
 #if HAVE_HEATED_BED
-            //heatbed animated icons
+            //heated bed animated icons
             uint8_t lin = 2 - ((NUM_EXTRUDER != 2) ? 1 : 0);
             if(heatedBedController.targetTemperatureC > 30)
                 cache[lin][0] = Printer::isAnimation() ? '\x0c' : '\x0d';
             else
                 cache[lin][0] = '\x0b';
 #endif
-#if FAN_PIN>-1 && FEATURE_FAN_CONTROL
+#if FAN_PIN > -1 && FEATURE_FAN_CONTROL
             //fan
             fanPercent = Printer::getFanSpeed() * 100 / 255;
             fanString[1] = 0;
-            if(fanPercent > 0)  //fan running anmation
+            if(fanPercent > 0)  //fan running animation
             {
                 fanString[0] = Printer::isAnimation() ? '\x0e' : '\x0f';
             }
@@ -2095,11 +2095,11 @@ void UIDisplay::refreshPage()
                     if(u8g_IsBBXIntersection(&u8g, 0, 30 - UI_FONT_SMALL_HEIGHT, 1, UI_FONT_SMALL_HEIGHT))
                         printU8GRow(117,30,fanString);
                     drawVProgressBar(116, 0, 9, 20, fanPercent);
-                    if(u8g_IsBBXIntersection(&u8g, 0, 42 - UI_FONT_SMALL_HEIGHT, 1, UI_FONT_SMALL_HEIGHT))
-                        printU8GRow(0,42,cache[3]); //mul + extruded
-                    if(u8g_IsBBXIntersection(&u8g, 0, 52 - UI_FONT_SMALL_HEIGHT, 1, UI_FONT_SMALL_HEIGHT))
-                        printU8GRow(0,52,cache[4]); //buf
 #endif
+                    if(u8g_IsBBXIntersection(&u8g, 0, 42 - UI_FONT_SMALL_HEIGHT, 1, UI_FONT_SMALL_HEIGHT))
+					   printU8GRow(0,42,cache[3]); //multiplier + extruded
+                    if(u8g_IsBBXIntersection(&u8g, 0, 52 - UI_FONT_SMALL_HEIGHT, 1, UI_FONT_SMALL_HEIGHT))
+						printU8GRow(0,52,cache[4]); //buffer usage
 #if SDSUPPORT
                     //SD Card
                     if(sd.sdactive && u8g_IsBBXIntersection(&u8g, 66, 52 - UI_FONT_SMALL_HEIGHT, 1, UI_FONT_SMALL_HEIGHT))
@@ -2635,10 +2635,10 @@ bool UIDisplay::nextPreviousAction(int16_t next, bool allowMoves)
                 d *= Printer::maxFeedrate[X_AXIS]*dtReal / (1000 * fabs(d));
             long steps = (long)(d * Printer::axisStepsPerMM[X_AXIS]);
             steps = ( increment < 0 ? RMath::min(steps,(long)increment) : RMath::max(steps,(long)increment));
-            PrintLine::moveRelativeDistanceInStepsReal(steps,0,0,0,Printer::maxFeedrate[X_AXIS],false);
+            PrintLine::moveRelativeDistanceInStepsReal(steps,0,0,0,Printer::maxFeedrate[X_AXIS],false,false);
         }
 #else
-        PrintLine::moveRelativeDistanceInStepsReal(increment,0,0,0,Printer::homingFeedrate[X_AXIS],false);
+        PrintLine::moveRelativeDistanceInStepsReal(increment,0,0,0,Printer::homingFeedrate[X_AXIS],false,false);
 #endif
         Commands::printCurrentPosition(PSTR("UI_ACTION_XPOSITION "));
         break;
@@ -2651,10 +2651,10 @@ bool UIDisplay::nextPreviousAction(int16_t next, bool allowMoves)
                 d *= Printer::maxFeedrate[Y_AXIS] * dtReal / (1000 * fabs(d));
             long steps = (long)(d * Printer::axisStepsPerMM[Y_AXIS]);
             steps = ( increment < 0 ? RMath::min(steps,(long)increment) : RMath::max(steps,(long)increment));
-            PrintLine::moveRelativeDistanceInStepsReal(0,steps,0,0,Printer::maxFeedrate[Y_AXIS],false);
+            PrintLine::moveRelativeDistanceInStepsReal(0,steps,0,0,Printer::maxFeedrate[Y_AXIS],false,false);
         }
 #else
-        PrintLine::moveRelativeDistanceInStepsReal(0,increment,0,0,Printer::homingFeedrate[Y_AXIS],false);
+        PrintLine::moveRelativeDistanceInStepsReal(0,increment,0,0,Printer::homingFeedrate[Y_AXIS],false,false);
 #endif
         Commands::printCurrentPosition(PSTR("UI_ACTION_YPOSITION "));
         break;
@@ -2672,10 +2672,10 @@ ZPOS1:
                 d *= Printer::maxFeedrate[Z_AXIS] * dtReal / (1000 * fabs(d));
             long steps = (long)(d * Printer::axisStepsPerMM[Z_AXIS]);
             steps = ( increment<0 ? RMath::min(steps,(long)increment) : RMath::max(steps,(long)increment));
-            PrintLine::moveRelativeDistanceInStepsReal(0,0,steps,0,Printer::maxFeedrate[Z_AXIS],false);
+            PrintLine::moveRelativeDistanceInStepsReal(0,0,steps,0,Printer::maxFeedrate[Z_AXIS],false,false);
         }
 #else
-        PrintLine::moveRelativeDistanceInStepsReal(0, 0, ((long)increment * Printer::axisStepsPerMM[Z_AXIS]) / 100, 0, Printer::homingFeedrate[Z_AXIS],false);
+        PrintLine::moveRelativeDistanceInStepsReal(0, 0, ((long)increment * Printer::axisStepsPerMM[Z_AXIS]) / 100, 0, Printer::homingFeedrate[Z_AXIS],false,false);
 #endif
         Printer::setNoDestinationCheck(false);
         Commands::printCurrentPosition(PSTR("UI_ACTION_ZPOSITION "));
@@ -2683,12 +2683,12 @@ ZPOS1:
 
     case UI_ACTION_XPOSITION_FAST:
         if(!allowMoves) return false;
-        PrintLine::moveRelativeDistanceInStepsReal(Printer::axisStepsPerMM[X_AXIS] * increment,0,0,0,Printer::homingFeedrate[X_AXIS],true);
+        PrintLine::moveRelativeDistanceInStepsReal(Printer::axisStepsPerMM[X_AXIS] * increment,0,0,0,Printer::homingFeedrate[X_AXIS],true,false);
         Commands::printCurrentPosition(PSTR("UI_ACTION_XPOSITION_FAST "));
         break;
     case UI_ACTION_YPOSITION_FAST:
         if(!allowMoves) return false;
-        PrintLine::moveRelativeDistanceInStepsReal(0,Printer::axisStepsPerMM[Y_AXIS] * increment,0,0,Printer::homingFeedrate[Y_AXIS],true);
+        PrintLine::moveRelativeDistanceInStepsReal(0,Printer::axisStepsPerMM[Y_AXIS] * increment,0,0,Printer::homingFeedrate[Y_AXIS],true,false);
         Commands::printCurrentPosition(PSTR("UI_ACTION_YPOSITION_FAST "));
         break;
     case UI_ACTION_ZPOSITION_FAST_NOTEST:
@@ -2698,13 +2698,13 @@ ZPOS1:
     case UI_ACTION_ZPOSITION_FAST:
         if(!allowMoves) return false;
 ZPOS2:
-        PrintLine::moveRelativeDistanceInStepsReal(0,0,Printer::axisStepsPerMM[Z_AXIS] * increment,0,Printer::homingFeedrate[Z_AXIS],true);
+        PrintLine::moveRelativeDistanceInStepsReal(0,0,Printer::axisStepsPerMM[Z_AXIS] * increment,0,Printer::homingFeedrate[Z_AXIS],true,false);
         Printer::setNoDestinationCheck(false);
         Commands::printCurrentPosition(PSTR("UI_ACTION_ZPOSITION_FAST "));
         break;
     case UI_ACTION_EPOSITION:
         if(!allowMoves) return false;
-        PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*increment / Printer::extrusionFactor,UI_SET_EXTRUDER_FEEDRATE,true,false);
+        PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*increment / Printer::extrusionFactor,UI_SET_EXTRUDER_FEEDRATE,true,false,false);
         Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
         break;
 #if FEATURE_RETRACTION
@@ -3527,22 +3527,22 @@ int UIDisplay::executeAction(unsigned int action, bool allowMoves)
         case UI_ACTION_X_UP:
         case UI_ACTION_X_DOWN:
             if(!allowMoves) return action;
-            PrintLine::moveRelativeDistanceInStepsReal(((action == UI_ACTION_X_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[X_AXIS], 0, 0, 0, Printer::homingFeedrate[X_AXIS], false);
+            PrintLine::moveRelativeDistanceInStepsReal(((action == UI_ACTION_X_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[X_AXIS], 0, 0, 0, Printer::homingFeedrate[X_AXIS], false,false);
             break;
         case UI_ACTION_Y_UP:
         case UI_ACTION_Y_DOWN:
             if(!allowMoves) return action;
-            PrintLine::moveRelativeDistanceInStepsReal(0, ((action == UI_ACTION_Y_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[Y_AXIS], 0, 0, Printer::homingFeedrate[Y_AXIS], false);
+            PrintLine::moveRelativeDistanceInStepsReal(0, ((action == UI_ACTION_Y_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[Y_AXIS], 0, 0, Printer::homingFeedrate[Y_AXIS], false,false);
             break;
         case UI_ACTION_Z_UP:
         case UI_ACTION_Z_DOWN:
             if(!allowMoves) return action;
-            PrintLine::moveRelativeDistanceInStepsReal(0, 0, ((action == UI_ACTION_Z_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[Z_AXIS], 0, Printer::homingFeedrate[Z_AXIS], false);
+            PrintLine::moveRelativeDistanceInStepsReal(0, 0, ((action == UI_ACTION_Z_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[Z_AXIS], 0, Printer::homingFeedrate[Z_AXIS], false,false);
             break;
         case UI_ACTION_EXTRUDER_UP:
         case UI_ACTION_EXTRUDER_DOWN:
             if(!allowMoves) return action;
-            PrintLine::moveRelativeDistanceInStepsReal(0, 0, 0, ((action == UI_ACTION_EXTRUDER_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[E_AXIS], UI_SET_EXTRUDER_FEEDRATE, false);
+            PrintLine::moveRelativeDistanceInStepsReal(0, 0, 0, ((action == UI_ACTION_EXTRUDER_UP) ? 1.0 : -1.0) * Printer::axisStepsPerMM[E_AXIS], UI_SET_EXTRUDER_FEEDRATE, false,false);
             break;
         case UI_ACTION_EXTRUDER_TEMP_UP:
         {
@@ -3716,6 +3716,8 @@ int UIDisplay::executeAction(unsigned int action, bool allowMoves)
         case UI_ACTION_LANGUAGE_FR:
         case UI_ACTION_LANGUAGE_CZ:
         case UI_ACTION_LANGUAGE_PL:
+        case UI_ACTION_LANGUAGE_TR:
+        case UI_ACTION_LANGUAGE_FI:
             Com::selectLanguage(action - UI_ACTION_LANGUAGE_EN);
 #if EEPROM_MODE != 0
             EEPROM::storeDataIntoEEPROM(0); // remember for next start

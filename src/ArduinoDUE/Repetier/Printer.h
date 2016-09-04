@@ -123,10 +123,15 @@ public:
     void init();
     void enable(bool permanent = true);
     void disable(bool permanent = true);
-    void measure(void);
+    bool measure(void);
     int32_t correct(int32_t x, int32_t y, int32_t z) const;
     void updateDerived();
     void reportStatus();
+	bool isEnabled() {return enabled;}
+	int32_t zMaxSteps() {return zEnd;}	
+	void set(float x,float y,float z);
+	void showMatrix();		
+    void resetCorrection();
 private:
     int matrixIndex(fast8_t x, fast8_t y) const;
     int32_t getMatrix(int index) const;
@@ -135,10 +140,14 @@ private:
     INLINE int32_t extrapolatePoint(fast8_t x1, fast8_t y1, fast8_t x2, fast8_t y2) const;
     void extrapolateCorner(fast8_t x, fast8_t y, fast8_t dx, fast8_t dy);
     void extrapolateCorners();
-    void resetCorrection();
 // attributes
+#if DRIVE_SYSTEM == DELTA	
     int32_t step;
     int32_t radiusCorrectionSteps;
+#else
+	int32_t xCorrectionSteps,xOffsetSteps;
+	int32_t yCorrectionSteps,yOffsetSteps;
+#endif	
     int32_t zStart,zEnd;
 #if !DISTORTION_PERMANENT
     int32_t matrix[DISTORTION_CORRECTION_POINTS * DISTORTION_CORRECTION_POINTS];
@@ -322,11 +331,13 @@ public:
     static int16_t travelMovesPerSecond;
     static int16_t printMovesPerSecond;
     static float radius0;
+#else
+	static int32_t zCorrectionStepsIncluded; 	
 #endif
 #if FEATURE_Z_PROBE || MAX_HARDWARE_ENDSTOP_Z || NONLINEAR_SYSTEM
     static int32_t stepsRemainingAtZHit;
 #endif
-#if DRIVE_SYSTEM==DELTA
+#if DRIVE_SYSTEM == DELTA
     static int32_t stepsRemainingAtXHit;
     static int32_t stepsRemainingAtYHit;
 #endif
@@ -899,7 +910,6 @@ public:
         }
         if(motorYorZ <= -2)
         {
-            //ANALYZER_ON(ANALYZER_CH3); // I dont think i can use these as they are for the y - possible bug area though
             WRITE(Z_STEP_PIN,START_STEP_WITH_HIGH);
 #if FEATURE_TWO_ZSTEPPER
             WRITE(Z2_STEP_PIN,START_STEP_WITH_HIGH);
@@ -911,7 +921,6 @@ public:
         }
         else if(motorYorZ >= 2)
         {
-            //ANALYZER_ON(ANALYZER_CH3); // I dont think i can use these as they are for the y - possible bug area though
             WRITE(Z_STEP_PIN,START_STEP_WITH_HIGH);
 #if FEATURE_TWO_ZSTEPPER
             WRITE(Z2_STEP_PIN,START_STEP_WITH_HIGH);
@@ -1049,7 +1058,7 @@ public:
     static void defaultLoopActions();
     static uint8_t setDestinationStepsFromGCode(GCode *com);
     static uint8_t moveTo(float x,float y,float z,float e,float f);
-    static uint8_t moveToReal(float x,float y,float z,float e,float f);
+    static uint8_t moveToReal(float x,float y,float z,float e,float f,bool pathOptimize = true);
     static void homeAxis(bool xaxis,bool yaxis,bool zaxis); /// Home axis
     static void setOrigin(float xOff,float yOff,float zOff);
     static bool isPositionAllowed(float x,float y,float z);
@@ -1089,7 +1098,7 @@ public:
     static void buildTransformationMatrix(float h1,float h2,float h3);
 #endif
 #if DISTORTION_CORRECTION
-    static void measureDistortion(void);
+    static bool measureDistortion(void);
     static Distortion distortion;
 #endif
     static void MemoryPosition();
