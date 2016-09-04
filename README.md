@@ -2,6 +2,8 @@
 
 ## Installation
 
+Switch to the Hatchbox-Alpha Branch
+
 Replace the Configuration.h file with the Configuration.h.HatchboxAlpha, then start Arduino and build, upload, then power cycle the printer.
 
 
