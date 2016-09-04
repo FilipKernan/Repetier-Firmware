@@ -167,8 +167,10 @@ STEPPER_CURRENT_CONTROL
 
 // Direction pin of extruder 0
 #define THERMOCOUPLE_1_PIN  1 
-// Step pin of extruder 1  
+// Step pin of extruder 0  
 #define THERMOCOUPLE_2_PIN  0   
+// Enable pin of extruder 0  
+#define THERMOCOUPLE_3_PIN  10   
 
 #define ORIG_E0_STEP_PIN    61
 #define ORIG_E0_DIR_PIN     60
@@ -183,11 +185,13 @@ STEPPER_CURRENT_CONTROL
 #define ORIG_E2_ENABLE_PIN  49
 
 // Extra driver on extension board
+// Might require pin 66 high for some drivers!
 #define ORIG_E3_STEP_PIN    35
 #define ORIG_E3_DIR_PIN     33
 #define ORIG_E3_ENABLE_PIN  37
 
 // Extra driver on extension port
+// Might require pin 25 high for some drivers!
 #define ORIG_E4_STEP_PIN    29
 #define ORIG_E4_DIR_PIN     27
 #define ORIG_E4_ENABLE_PIN  31

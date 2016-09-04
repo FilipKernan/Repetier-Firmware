@@ -144,11 +144,11 @@ char displayCache[UI_ROWS][MAX_COLS+1];
 // .***. 14
 // *.*.* 21
 // ..*.. 4
+// ..*.. 4
+// ..*.. 4
 // ***.. 28
 // ..... 0
-// ..... 0
-// ..... 0
-const uint8_t character_back[8] PROGMEM = {4,14,21,4,28,0,0,0};
+const uint8_t character_back[8] PROGMEM = {4, 14, 21, 4, 4, 4, 28, 0};
 // Degrees sign - code 2
 // ..*.. 4
 // .*.*. 10
@@ -568,7 +568,164 @@ void initializeLCD()
 }
 // ----------- end direct LCD driver
 #endif
-#if UI_DISPLAY_TYPE < DISPLAY_ARDUINO_LIB
+
+#if UI_DISPLAY_TYPE == DISPLAY_SR
+// Native LCD driver for displays connected using shift register (2-wire or 3-wire)
+//
+// Options:
+//   #define UI_DISPLAY_TYPE        DISPLAY_SR
+//   #define UI_DISPLAY_DATA_PIN    29
+//   #define UI_DISPLAY_CLOCK_PIN   28
+//   #define UI_DISPLAY_ENABLE_PIN  -1 // or undefined for 2-wire, pin number for 3-wire
+//
+// Non-latching shift register (e.g. 74LS164) outputs:
+//   - Q0 - unused
+//   - Q1 - unused
+//   - Q2 - LCD RS
+//   - Q3 - LCD D4
+//   - Q4 - LCD D5
+//   - Q5 - LCD D6
+//   - Q6 - LCD D7
+//   - Q7 - LCD ENABLE (via AND gate for 2-wire version, unused for 3-wire)
+//
+// More info about this:
+//    https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home
+// More schematics including latching (74HC595) and non-latching (74LS164) shift registers:
+//    https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/schematics
+
+// Shift a bit into shift register
+static void lcdShiftBit(uint8_t bit)
+{
+    WRITE(UI_DISPLAY_DATA_PIN, bit);
+    WRITE(UI_DISPLAY_CLOCK_PIN, 1);
+    HAL::delayMicroseconds(2);
+    WRITE(UI_DISPLAY_CLOCK_PIN, 0);
+    HAL::delayMicroseconds(2);
+}
+
+// Write a nibble into LCD via SR
+void lcdWriteNibble(uint8_t value, uint8_t rs = 0)
+{
+#if !(defined(UI_DISPLAY_ENABLE_PIN) && (UI_DISPLAY_ENABLE_PIN > -1))
+    // Clear shift register by shifting zero bits (for 2-wire only)
+    for (uint8_t i = 0; i < 8; ++i)
+        lcdShiftBit(0);
+#endif
+
+    // Shift ENABLE bit to AND gate (for 2-wire version). It will be
+    // set to high for LCD when both Q7 and DATA/EN output are high.
+    lcdShiftBit(1);          // Q7: AND gate
+
+    // Shift 4 data bits from value
+    lcdShiftBit(value & 8);  // Q6: LCD D7
+    lcdShiftBit(value & 4);  // Q5: LCD D6
+    lcdShiftBit(value & 2);  // Q4: LCD D5
+    lcdShiftBit(value & 1);  // Q3: LCD D4
+
+    // Shift RS bit
+    lcdShiftBit(rs);         // Q2: LCD RS
+
+    // Shift 2 unused bits (last must be 0 for 2-wire version)
+    lcdShiftBit(0);          // Q1
+    lcdShiftBit(0);          // Q0, shifts 1 to Q7 that allows EN output
+
+    // Strobe ENABLE bit to write data into the LCD using AND gate
+    // for 2-wire version or dedicated pin for 3-wire
+#if defined(UI_DISPLAY_ENABLE_PIN) && (UI_DISPLAY_ENABLE_PIN > -1)
+    WRITE(UI_DISPLAY_ENABLE_PIN, 1);
+#else
+    WRITE(UI_DISPLAY_DATA_PIN, 1);
+#endif
+    HAL::delayMicroseconds(2);
+#if defined(UI_DISPLAY_ENABLE_PIN) && (UI_DISPLAY_ENABLE_PIN > -1)
+    WRITE(UI_DISPLAY_ENABLE_PIN, 0);
+#else
+    WRITE(UI_DISPLAY_DATA_PIN, 0);
+#endif
+    HAL::delayMicroseconds(UI_DELAYPERCHAR);
+}
+
+// Write a byte into LCD via SR
+void lcdWriteByte(uint8_t c, uint8_t rs)
+{
+    lcdWriteNibble(c >> 4, rs);
+    lcdWriteNibble(c, rs);
+}
+
+// Initialize LCD via SR
+void initializeLCD(bool refresh = false)
+{
+    if (!refresh) {
+        // Init LCD pins
+        SET_OUTPUT(UI_DISPLAY_DATA_PIN);
+        SET_OUTPUT(UI_DISPLAY_CLOCK_PIN);
+        WRITE(UI_DISPLAY_DATA_PIN, 0);
+        WRITE(UI_DISPLAY_CLOCK_PIN, 0);
+#if defined(UI_DISPLAY_ENABLE_PIN) && (UI_DISPLAY_ENABLE_PIN > -1)
+        SET_OUTPUT(UI_DISPLAY_ENABLE_PIN);
+        WRITE(UI_DISPLAY_ENABLE_PIN, 0);
+#endif
+
+        // SEE PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
+        // according to datasheet, we need at least 40ms after power rises above 2.7V
+        // before sending commands. Arduino can turn on way before 4.5V.
+        // is this delay long enough for all cases??
+        HAL::delayMilliseconds(235);
+    }
+
+    // Put the LCD into 4 bit mode
+    // this is according to the hitachi HD44780 datasheet
+    // figure 24, pg 46
+
+    // We start in 8 bit mode, try to set 4 bit mode
+    // at this point we are in 8 bit mode but of course in this
+    // interface 4 pins are dangling unconnected and the values
+    // on them don't matter for these instructions.
+    lcdWriteNibble(0x03);
+    HAL::delayMicroseconds(5000); // I have one LCD for which 4500 here was not long enough.
+    // Second try
+    lcdWriteNibble(0x03);
+    HAL::delayMicroseconds(5000);
+    // Third go!
+    lcdWriteNibble(0x03);
+    HAL::delayMicroseconds(160);
+    // Finally, set to 4-bit interface
+    lcdWriteNibble(0x02);
+    HAL::delayMicroseconds(160);
+
+    // finally, set # lines, font size, etc.
+    lcdCommand(LCD_4BIT | LCD_2LINE | LCD_5X7);
+    if (!refresh) {
+        lcdCommand(LCD_CLEAR);
+        HAL::delayMilliseconds(3); // clear is slow operation
+    }
+    lcdCommand(LCD_INCREASE | LCD_DISPLAYSHIFTOFF);
+    lcdCommand(LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKINGOFF);
+    uid.createChar(1, character_back);
+    uid.createChar(2, character_degree);
+    uid.createChar(3, character_selected);
+    uid.createChar(4, character_unselected);
+    uid.createChar(5, character_temperature);
+    uid.createChar(6, character_folder);
+    uid.createChar(7, character_ready);
+
+    uid.lastSwitch = uid.lastRefresh = HAL::timeInMilliseconds();
+}
+
+#ifdef TRY_AUTOREPAIR_LCD_ERRORS
+#define HAS_AUTOREPAIR
+// Fast repair function for displays loosing their settings.
+// Do not call this if your display has no problems.
+void repairLCD()
+{
+    // Almost the same as for init except GPIO init and LCD clear
+    initializeLCD(true);
+}
+#endif
+
+#endif // UI_DISPLAY_TYPE == DISPLAY_SR
+
+#if UI_DISPLAY_TYPE < DISPLAY_ARDUINO_LIB || UI_DISPLAY_TYPE == DISPLAY_SR
 void UIDisplay::printRow(uint8_t r,char *txt,char *txt2,uint8_t changeAtCol)
 {
     changeAtCol = RMath::min(UI_COLS, changeAtCol);
@@ -781,6 +938,9 @@ void initializeLCD()
 #ifdef U8GLIB_SSD1306_SW_SPI
     u8g_InitSPI(&u8g,&u8g_dev_ssd1306_128x64_sw_spi,  UI_DISPLAY_D4_PIN, UI_DISPLAY_ENABLE_PIN, UI_DISPLAY_RS_PIN, U8G_PIN_NONE, U8G_PIN_NONE);
 #endif
+#ifdef U8GLIB_SH1106_SW_SPI
+	u8g_InitSPI(&u8g,&u8g_dev_sh1106_128x64_sw_spi,  UI_DISPLAY_D4_PIN, UI_DISPLAY_ENABLE_PIN, UI_DISPLAY_RS_PIN, U8G_PIN_NONE, U8G_PIN_NONE);
+#endif
 #ifdef U8GLIB_KS0108_FAST
     u8g_Init8Bit(&u8g,&u8g_dev_ks0108_128x64_fast,UI_DISPLAY_D0_PIN,UI_DISPLAY_D1_PIN,UI_DISPLAY_D2_PIN,UI_DISPLAY_D3_PIN,UI_DISPLAY_D4_PIN,UI_DISPLAY_D5_PIN,UI_DISPLAY_D6_PIN,UI_DISPLAY_D7_PIN,UI_DISPLAY_ENABLE_PIN,UI_DISPLAY_CS1,UI_DISPLAY_CS2,
                  UI_DISPLAY_DI,UI_DISPLAY_RW_PIN,UI_DISPLAY_RESET_PIN);
@@ -961,7 +1121,7 @@ void UIDisplay::initialize()
     HAL::i2cStop();
 #endif
 }
-#if UI_DISPLAY_TYPE == DISPLAY_4BIT || UI_DISPLAY_TYPE == DISPLAY_8BIT || UI_DISPLAY_TYPE == DISPLAY_I2C
+#if UI_DISPLAY_TYPE == DISPLAY_4BIT || UI_DISPLAY_TYPE == DISPLAY_8BIT || UI_DISPLAY_TYPE == DISPLAY_I2C || UI_DISPLAY_TYPE == DISPLAY_SR
 void UIDisplay::createChar(uint8_t location,const uint8_t charmap[])
 {
     location &= 0x7; // we only have 8 locations 0-7
@@ -1267,17 +1427,24 @@ void UIDisplay::parse(const char *txt,bool ram)
 	            break;
             }
 			break;
-        case 'd':
-            if(c2 == 'o') addStringOnOff(Printer::debugEcho());
-            else if(c2 == 'i') addStringOnOff(Printer::debugInfo());
-            else if(c2 == 'e') addStringOnOff(Printer::debugErrors());
-            else if(c2 == 'd') addStringOnOff(Printer::debugDryrun());
-            break;
+        case 'd':  // debug boolean
+            if (c2 == 'o') addStringOnOff(Printer::debugEcho());
+            if (c2 == 'i') addStringOnOff(Printer::debugInfo());
+            if (c2 == 'e') addStringOnOff(Printer::debugErrors());
+            if (c2 == 'd') addStringOnOff(Printer::debugDryrun());
+            if (c2 == 'p') addStringOnOff(Printer::debugEndStop());
+            if (c2 == 'x') addStringP(Endstops::xMin() ? ui_selected : ui_unselected);
+            if (c2 == 'X') addStringP(Endstops::xMax() ? ui_selected : ui_unselected);
+            if (c2 == 'y') addStringP(Endstops::yMin() ? ui_selected : ui_unselected);
+            if (c2 == 'Y') addStringP(Endstops::yMax() ? ui_selected : ui_unselected);
+            if (c2 == 'z') addStringP(Endstops::zMin() ? ui_selected : ui_unselected);
+            if (c2 == 'Z') addStringP(Endstops::zMax() ? ui_selected : ui_unselected);
+        break;
         case 'D':
 #if FEATURE_DITTO_PRINTING
             if(c2>='0' && c2<='9')
             {
-                addStringP(Extruder::dittoMode==c2-'0'?ui_selected:ui_unselected);
+                addStringP(Extruder::dittoMode==c2-'0' ? ui_selected : ui_unselected);
             }
 #endif
             break;
@@ -1303,10 +1470,10 @@ void UIDisplay::parse(const char *txt,bool ram)
                 break;
             }
 #endif
+#if NUM_TEMPERATURE_LOOPS > 0
             uint8_t eid = NUM_EXTRUDER;    // default = BED if c2 not specified extruder number
             if(c2 == 'c') eid = Extruder::current->id;
             else if(c2 >= '0' && c2 <= '9') eid = c2 - '0';
-#if NUM_TEMPERATURE_LOOPS > 0
             if(Printer::isAnyTempsensorDefect())
             {
                 if(eid == 0 && ++beepdelay > 30) beepdelay = 0; // beep every 30 seconds
@@ -1660,7 +1827,7 @@ void UIDisplay::parse(const char *txt,bool ram)
             break;
         case 'y':
 #if DRIVE_SYSTEM == DELTA
-            if(c2 >= '0' && c2 <= '3') fvalue = (float)Printer::currentDeltaPositionSteps[c2 - '0']*Printer::invAxisStepsPerMM[c2-'0'];
+            if(c2 >= '0' && c2 <= '3') fvalue = (float)Printer::currentNonlinearPositionSteps[c2 - '0']*Printer::invAxisStepsPerMM[c2-'0'];
             addFloat(fvalue,3,2);
 #endif
             break;
@@ -1838,6 +2005,7 @@ void sdrefresh(uint16_t &r,char cache[UI_ROWS][MAX_COLS+1])
 // Refresh current menu page
 void UIDisplay::refreshPage()
 {
+   Endstops::update();
 #if  UI_DISPLAY_TYPE == DISPLAY_GAMEDUINO2
     GD2::refresh();
 #else
@@ -1851,8 +2019,8 @@ void UIDisplay::refreshPage()
         ui_autoreturn_time = HAL::timeInMilliseconds() + UI_AUTORETURN_TO_MENU_AFTER;
 #endif
     encoderStartScreen = uid.encoderLast;
-
     // Copy result into cache
+    Endstops::update();
     if(menuLevel == 0) // Top level menu
     {
         UIMenu *men = (UIMenu*)pgm_read_word(&(ui_pages[menuPos[0]]));
@@ -3181,6 +3349,9 @@ int UIDisplay::executeAction(unsigned int action, bool allowMoves)
         case UI_ACTION_DEBUG_ERROR:
             Printer::toggleErrors();
             break;
+        case UI_ACTION_DEBUG_ENDSTOP:
+            Printer::toggleEndStop();
+            break;
         case UI_ACTION_DEBUG_DRYRUN:
             Printer::toggleDryRun();
             if(Printer::debugDryrun())   // simulate movements without printing
@@ -3588,7 +3759,7 @@ int UIDisplay::executeAction(unsigned int action, bool allowMoves)
             Printer::currentPositionSteps[Z_AXIS] = 0;
             Printer::updateDerivedParameter();
 #if NONLINEAR_SYSTEM
-            transformCartesianStepsToDeltaSteps(Printer::currentPositionSteps, Printer::currentDeltaPositionSteps);
+            transformCartesianStepsToDeltaSteps(Printer::currentPositionSteps, Printer::currentNonlinearPositionSteps);
 #endif
             Printer::updateCurrentPosition(true);
             Com::printFLN(Com::tZProbePrinterHeight, Printer::zLength);
