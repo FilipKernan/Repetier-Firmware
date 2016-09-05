@@ -242,10 +242,10 @@
 #define UI_ACTION_LANGUAGE_TR           1710
 #define UI_ACTION_LANGUAGE_FI           1711
 
-//after code add by xky 
+// xky
 #define UI_ACTION_DELTA_ROD              1301
 #define	UI_ACTION_DELTA_RADIUS           1302
-
+// xky END
 
 #define UI_ACTION_MENU_XPOS             4000
 #define UI_ACTION_MENU_YPOS             4001
@@ -284,30 +284,15 @@
 #define UI_ACTION_WIZARD_JAM_WAITHEAT    5002
 #define UI_ACTION_WIZARD_JAM_EOF         5003
 
-//after code add by xky  ******
-#define UI_ACTION_RUN_AUTO_LEVEING       6001
-#define UI_ACTION_LOAD_FILAMENT          6002
-#define UI_ACTION_UNLOAD_FILAMENT        6003
+// xky
+#define UI_ACTION_RUN_AUTO_LEVEING        6001
 #define UI_ACTION_NOZZLE_CLOSE_HOTBED     6004
 #define UI_ACTION_AUTO_SET_ENDSTOP_OFFSET 6005
 #define UI_ACTION_SET_Z_AIXS_TO_ZERO      6006
-
-#define UI_ACTION_TestRadiusMoveToXPositiveDirection 6010
-#define UI_ACTION_TestRadiusMoveToXNegativeDirection 6011
-#define UI_ACTION_TestRadiusMoveToXCenter            6012
-#define UI_ACTION_TestRadiusMoveToYPositiveDirection 6013
-#define UI_ACTION_TestRadiusMoveToYNegativeDirection 6014
-#define UI_ACTION_TestRadiusMoveToYCenter            6015
-
-#define UI_ACTION_X_ENDSTOP_OFFSET   6016
-#define	UI_ACTION_Y_ENDSTOP_OFFSET   6017
-#define	UI_ACTION_Z_ENDSTOP_OFFSET   6018
-
-#define UI_ACTION_P1_OFFSET   6019
-#define UI_ACTION_P2_OFFSET   6020
-#define UI_ACTION_P3_OFFSET   6021
-
-//***********************
+#define UI_ACTION_X_ENDSTOP_OFFSET        6016
+#define	UI_ACTION_Y_ENDSTOP_OFFSET        6017
+#define	UI_ACTION_Z_ENDSTOP_OFFSET        6018
+// xky END
 
 // Load basic language definition to make sure all values are defined
 //#include "uilang.h"

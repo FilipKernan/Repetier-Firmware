@@ -2995,7 +2995,7 @@ ZPOS2:
         break;
         
   //after code add by xky	    **************************************************
-	case UI_ACTION_DELTA_ROD:		
+	case UI_ACTION_DELTA_ROD:
 		float b;
 		b = EEPROM::deltaDiagonalRodLength();
 		INCREMENT_MIN_MAX(b,0.1,0.1,999.9);
@@ -3090,7 +3090,7 @@ ZPOS2:
             Commands::printCurrentPosition(PSTR("UI_ACTION_SET_MEASURED_ORIGIN "));
 			}
 		break;
- //code add by xky  ******************************************************		
+ //code add by xky  ******************************************************
 
 
 #if DRIVE_SYSTEM != DELTA
@@ -3894,94 +3894,22 @@ int UIDisplay::executeAction(unsigned int action, bool allowMoves)
             EEPROM::storeDataIntoEEPROM(0); // remember for next start
 #endif
             break;
-
- //after code ADD BY XKY  *********************************
-	    case UI_ACTION_RUN_AUTO_LEVEING:
-			GCode::executeFString(Com::tAutoLeveingGcode);		
-			break;
-		case UI_ACTION_LOAD_FILAMENT:
-			
-			if(!allowMoves) return false;
-              PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*570 / Printer::extrusionFactor,150,true,false);
-              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
-			  PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*20 / Printer::extrusionFactor,2,true,false);
-              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
-		
-			break;
-		case UI_ACTION_UNLOAD_FILAMENT:
-			 if(!allowMoves) return false;
-              PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*20 / Printer::extrusionFactor,2,true,false);
-              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
-			 if(!allowMoves) return false;
-              PrintLine::moveRelativeDistanceInSteps(0,0,0,Printer::axisStepsPerMM[E_AXIS]*-570 / Printer::extrusionFactor,150,true,false);
-              Commands::printCurrentPosition(PSTR("UI_ACTION_EPOSITION "));
-
-			break;
-
-	    case UI_ACTION_NOZZLE_CLOSE_HOTBED:
-	        #if Z_HOME_DIR > 0
+// XKY
+        case UI_ACTION_RUN_AUTO_LEVEING:
+            GCode::executeFString(Com::tAutoLeveingGcode);
+	          break;
+	       case UI_ACTION_NOZZLE_CLOSE_HOTBED:
+            #if Z_HOME_DIR > 0
                 Printer::homeAxis(true, true,true);
             #else
                 Printer::homeAxis(true, true, false);
             #endif
-		 GCode::executeFString(Com::tNozzleCloseHotbed);			
-		break;
-		
-		case UI_ACTION_AUTO_SET_ENDSTOP_OFFSET:
-			GCode::executeFString(Com::tAutoSetEndstopOffsetGcode);	
-			break;
-
-	    //ABOUT ADJUST RADIUS
-		case UI_ACTION_TestRadiusMoveToXPositiveDirection:
-				//after code add by xky  ////test center point
-	        #if Z_HOME_DIR > 0
-            Printer::homeAxis(true, true, true);
-           #else
-            Printer::homeAxis(true, true, false);
-           #endif
-			GCode::executeFString(Com::tTestRadiusMoveToXPositiveDirection);	
-			break;
-
-        case UI_ACTION_TestRadiusMoveToXNegativeDirection:
-				//after code add by xky   //test x POINT
-	        #if Z_HOME_DIR > 0
-            Printer::homeAxis(true, true, true);
-           #else
-            Printer::homeAxis(true, true, false);
-           #endif
-			GCode::executeFString(Com::tTestRadiusMoveToXNegativeDirection);	
-				break;
-
-        case UI_ACTION_TestRadiusMoveToXCenter:         
-				//after code add by xky   //TEST Y POINT
-	        #if Z_HOME_DIR > 0
-            Printer::homeAxis(true, true, true);
-           #else
-            Printer::homeAxis(true, true, false);
-           #endif
-			GCode::executeFString(Com::tTestRadiusMoveToXCenter);	
-				break;
-
-        case UI_ACTION_TestRadiusMoveToYPositiveDirection: 
-				//after code add by xky    TEST z POINT
-	        #if Z_HOME_DIR > 0
-            Printer::homeAxis(true, true, true);
-           #else
-            Printer::homeAxis(true, true, false);
-           #endif
-			GCode::executeFString(Com::tTestRadiusMoveToYPositiveDirection);	
-				break;
-
-        case UI_ACTION_TestRadiusMoveToYNegativeDirection:
-
-			GCode::executeFString(Com::tTestRadiusMoveToYNegativeDirection);	
-				break;
-
-        case UI_ACTION_TestRadiusMoveToYCenter:           
-			GCode::executeFString(Com::tTestRadiusMoveToYCenter);	
-				break;
-       //  ***********************************************************************
-
+            GCode::executeFString(Com::tNozzleCloseHotbed);
+            break;
+          case UI_ACTION_AUTO_SET_ENDSTOP_OFFSET:
+        	  GCode::executeFString(Com::tAutoSetEndstopOffsetGcode);
+      	    break;
+// XKY END
         }
     refreshPage();
 #if UI_AUTORETURN_TO_MENU_AFTER!=0
