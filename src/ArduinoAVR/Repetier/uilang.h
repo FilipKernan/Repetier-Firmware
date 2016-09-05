@@ -16,6 +16,17 @@
 
 */
 
+// xky
+#define UI_TEXT_AUTO_LEVEING "Auto Leveling"
+#define UI_TEXT_NOZZLE_TO_HOTBED "Test Leveling"
+#define UI_TEXT_DELTA_ROD "Delta Rod:%ak"
+#define UI_TEXT_DELTA_RADIUS "Delta Radius:%al"
+#define UI_TEXT_SET_ENDSTOP_OFFSET "Set Ends. Offset"
+#define UI_TEXT_X_ENDSTOP_OFFSET "X End. Off:%ao"
+#define UI_TEXT_Y_ENDSTOP_OFFSET "Y End. Off:%ap"
+#define UI_TEXT_Z_ENDSTOP_OFFSET "Z End. Off:%aq"
+// END xky
+
 #if !defined(UI_DISPLAY_CHARSET) || UI_DISPLAY_CHARSET > 3
 #define UI_DISPLAY_CHARSET 1
 #endif
@@ -671,29 +682,6 @@
 #define UI_TEXT_X_OFFSET_EN "Set X offset:%T0mm"
 #define UI_TEXT_Y_OFFSET_EN "Set Y offset:%T1mm"
 #define UI_TEXT_Z_OFFSET_EN "Set Z offset:%T2mm"
-
-
-
-//after text code add by xky
-#define UI_TEXT_LOAD_FILAMENT_E0 "Load Filament E0"
-#define UI_TEXT_UNLOAD_FILAMENT_E0 "Unload Filament E0"
-#define UI_TEXT_LOAD_FILAMENT_E1 "Load Filament E1"
-#define UI_TEXT_LOAD_FILAMENT_E1 "Unload Filament E1"
-#define UI_TEXT_AUTO_LEVEING "Auto Leveling"
-#define UI_TEXT_NOZZLE_TO_HOTBED "Test Leveling"
-#define UI_TEXT_DELTA_ROD "Delta Rod:%ak"
-#define UI_TEXT_DELTA_RADIUS "Delta Radius:%al"
-#define UI_TEXT_SET_ENDSTOP_OFFSET "Set Ends. Offset"
-
-#define     UI_TEXT_X_ENDSTOP_OFFSET "X End. Off:%ao"
-#define 	UI_TEXT_Y_ENDSTOP_OFFSET "Y End. Off:%ap"
-#define 	UI_TEXT_Z_ENDSTOP_OFFSET "Z End. Off:%aq"
-
-#define     UI_TEXT_P1_OFFSET "P1 Offset:%p1"
-#define 	UI_TEXT_P2_OFFSET "P2 Offset:%p2"
-#define 	UI_TEXT_P3_OFFSET "P3 Offset:%p3"
-
-
 
 // *************** German translation ****************
 
