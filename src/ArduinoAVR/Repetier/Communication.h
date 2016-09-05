@@ -415,34 +415,11 @@ FSTRINGVAR(tEPRSegmentsPerSecondPrint)
 FSTRINGVAR(tEPRSegmentsPerSecondTravel)
 #endif
 
-//AFTER CODE ADD BY XKY   ******
+// XKY
 FSTRINGVAR(tAutoLeveingGcode)
-
 FSTRINGVAR(tAutoSetEndstopOffsetGcode)
-
-FSTRINGVAR(tLoadFilamentDistanceFast)
-FSTRINGVAR(tUnloadFilamentDistanceFast)
-FSTRINGVAR(tLoadFilamentDistanceSlow)
-FSTRINGVAR(tUnloadFilamentDistanceSlow)
-
 FSTRINGVAR(tNozzleCloseHotbed)
-
-//ABOUT ADJUST radius
-FSTRINGVAR(tTestRadiusMoveToXPositiveDirection)
-FSTRINGVAR(tTestRadiusMoveToXNegativeDirection)
-FSTRINGVAR(tTestRadiusMoveToXCenter)
-FSTRINGVAR(tTestRadiusMoveToYPositiveDirection)
-FSTRINGVAR(tTestRadiusMoveToYNegativeDirection)
-FSTRINGVAR(tTestRadiusMoveToYCenter)
-
-// add by xky about add new canshu
-FSTRINGVAR(tEPRZProbeP1Offset)
-FSTRINGVAR(tEPRZProbeP2Offset)
-FSTRINGVAR(tEPRZProbeP3Offset)
-
-
-//***********
-
+// XKY END
 
 static void config(FSTRINGPARAM(text));
 static void config(FSTRINGPARAM(text),int value);

@@ -180,12 +180,6 @@ void SDCard::stopPrint()
         Commands::waitUntilEndOfAllMoves();
         Printer::kill(false);
     }
-	//after code add by xky
-	#if Z_HOME_DIR > 0
-            Printer::homeAxis(true, true, true);
-    #else
-            Printer::homeAxis(true, true, false);
-    #endif
 }
 
 void SDCard::writeCommand(GCode *code)

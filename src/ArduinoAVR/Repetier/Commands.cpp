@@ -1367,15 +1367,16 @@ void Commands::processGCode(GCode *com) {
             break;
 
 
-		//after code add by xky about color tech screen
+// XKY
 	case 301: // G301
-	        #if Z_HOME_DIR > 0
-                Printer::homeAxis(true, true,true);
-            #else
-                Printer::homeAxis(true, true, false);
-            #endif
-		 GCode::executeFString(Com::tNozzleCloseHotbed);	
+        #if Z_HOME_DIR > 0
+            Printer::homeAxis(true, true,true);
+        #else
+            Printer::homeAxis(true, true, false);
+        #endif
+	      GCode::executeFString(Com::tNozzleCloseHotbed);
         break;
+// XKY END
 
 	case 302: // G302
 
@@ -1395,7 +1396,7 @@ void Commands::processGCode(GCode *com) {
 	case 304: // G304
 				//after part about save data
 		    Printer::updateCurrentPosition();
-			//add by xky 
+			// xky
 			if (Printer::currentPosition[Z_AXIS] < -10 || Printer::currentPosition[Z_AXIS] > 10 || Printer::currentPosition[Z_AXIS]  == 0  )
 			{
 				UI_STATUS_UPD("Err:Adjust Z Hight");
