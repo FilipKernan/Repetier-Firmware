@@ -2,11 +2,7 @@
 
 ## Installation
 
-Please use your configuration tool at 
-[http://www.repetier.com/firmware/v092](http://www.repetier.com/firmware/v092)
-for easy and fast configuration. You get the complete sources you need to compile from the online configurator.
-This system also allows it to upload configurations created with this tool and modify the configuration. This is handy for updates as you get all newly introduced parameter just by uploading the old version and downloading the
-latest version. New parameter are initalized with default values.
+Replace the Configuration.h file with the Configuration.h.HatchboxAlpha, then start Arduino and build, upload, then power cycle the printer.
 
 ## Version 0.92.8 
 * Cleaner code base.
