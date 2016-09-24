@@ -4,9 +4,6 @@
 
 Replace the Configuration.h file with the Configuration.h.HatchboxAlpha, then start Arduino and build, upload, then power cycle the printer.
 
-Replace the Configuration.h file with the Configuration.h.HatchboxAlpha, then start Arduino and build, upload, then power cycle the printer.
-
-
 ## Version 0.92.8 
 * Cleaner code base.
 * Pulse dense modulation for heater and fans.
