@@ -320,8 +320,6 @@ inline void memcopy4(void *dest,void *source) {
 #if !defined(ROD_RADIUS) && DRIVE_SYSTEM == DELTA
 #define ROD_RADIUS (PRINTER_RADIUS-END_EFFECTOR_HORIZONTAL_OFFSET-CARRIAGE_HORIZONTAL_OFFSET)
 #endif
-//xky edit after code
-//#define ROD_RADIUS 143.5
 
 #ifndef UI_SPEEDDEPENDENT_POSITIONING
 #define UI_SPEEDDEPENDENT_POSITIONING true

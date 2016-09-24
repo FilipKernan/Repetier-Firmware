@@ -382,7 +382,7 @@ void EEPROM::storeDataIntoEEPROM(uint8_t corrupted)
     HAL::eprSetFloat(EPR_Y_LENGTH,Printer::yLength);
     HAL::eprSetFloat(EPR_Z_LENGTH,Printer::zLength);
 #if NONLINEAR_SYSTEM
-    //HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS, Printer::radius0);   //XKY MARK PLACE  THIS CODE DELETA BY XKY
+    HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS, Printer::radius0);
 #endif
 #if ENABLE_BACKLASH_COMPENSATION
     HAL::eprSetFloat(EPR_BACKLASH_X,Printer::backlashX);
