@@ -297,7 +297,7 @@
 #define DELTA_MAX_RADIUS 151
 #define ROD_RADIUS 176.5
 #define PRINTER_RADIUS 176.5
-#define DELTA_HOME_ON_POWER 0
+#define DELTA_HOME_ON_POWER 1
 #define STEP_COUNTER
 #define DELTA_X_ENDSTOP_OFFSET_STEPS 0
 #define DELTA_Y_ENDSTOP_OFFSET_STEPS 0
@@ -396,13 +396,12 @@ WARNING: Servos can draw a considerable amount of current. Make sure your system
 #define SERVO3_NEUTRAL_POS  -1
 #define UI_SERVO_CONTROL 0
 #define FAN_KICKSTART_TIME  200
-
-        #define FEATURE_WATCHDOG 1
+#define FEATURE_WATCHDOG 1
 
 // #################### Z-Probing #####################
 
 #define FEATURE_Z_PROBE 1
-#define Z_PROBE_BED_DISTANCE 10
+#define Z_PROBE_BED_DISTANCE 1
 #define Z_PROBE_PIN ORIG_Z_MIN_PIN
 #define Z_PROBE_PULLUP 0
 #define Z_PROBE_ON_HIGH 0
@@ -411,9 +410,9 @@ WARNING: Servos can draw a considerable amount of current. Make sure your system
 #define Z_PROBE_Z_OFFSET 0
 #define Z_PROBE_WAIT_BEFORE_TEST 0
 #define Z_PROBE_SPEED 2
-#define Z_PROBE_XY_SPEED 120
+#define Z_PROBE_XY_SPEED 200
 #define Z_PROBE_SWITCHING_DISTANCE 2
-#define Z_PROBE_REPETITIONS 3
+#define Z_PROBE_REPETITIONS 2
 #define Z_PROBE_HEIGHT -0.1  // THIS IS THE DISTANCE SENOR AND NOZZLED
 #define Z_PROBE_START_SCRIPT ""
 #define Z_PROBE_FINISHED_SCRIPT ""
@@ -423,6 +422,7 @@ WARNING: Servos can draw a considerable amount of current. Make sure your system
 //#define Z_PROBE_REQUIRES_HEATING 0
 /** Minimum extruder temperature for probing. If it is lower, it will be increased to that value. */
 //#define Z_PROBE_MIN_TEMPERATURE 150
+#define ZPROBE_MIN_TEMPERATURE 150
 
 /*
 Define how we measure the bed rotation.
