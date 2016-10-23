@@ -1207,6 +1207,7 @@ void Commands::processGCode(GCode *com) {
                     Extruder::setTemperatureForExtruder(actTemp[Extruder::current->id], Extruder::current->id, false, actTemp[Extruder::current->id] > MAX_ROOM_TEMPERATURE);
 #endif
 #endif
+                    Printer::homeAxis(false, false, true);
                 }
             }
             break;
