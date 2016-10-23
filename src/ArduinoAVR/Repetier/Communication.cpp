@@ -448,7 +448,7 @@ FSTRINGVALUE(Com::tStartupGCode,STARTUP_GCODE)
 #endif
 
 // xky
-FSTRINGVALUE(Com::tAutoLeveingGcode,"G32 S2")
+FSTRINGVALUE(Com::tAutoLeveingGcode,"G32 S1")
 FSTRINGVALUE(Com::tAutoSetEndstopOffsetGcode,"G132 S1")
 FSTRINGVALUE(Com::tNozzleCloseHotbed,"G1 Z0")
 // xky END
