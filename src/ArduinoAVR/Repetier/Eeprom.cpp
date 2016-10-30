@@ -475,7 +475,6 @@ void EEPROM::initalizeUncached()
     HAL::eprSetFloat(EPR_Z_PROBE_Y2,Z_PROBE_Y2);
     HAL::eprSetFloat(EPR_Z_PROBE_X3,Z_PROBE_X3);
     HAL::eprSetFloat(EPR_Z_PROBE_Y3,Z_PROBE_Y3);
-
     HAL::eprSetFloat(EPR_AXISCOMP_TANXY,AXISCOMP_TANXY);
     HAL::eprSetFloat(EPR_AXISCOMP_TANYZ,AXISCOMP_TANYZ);
     HAL::eprSetFloat(EPR_AXISCOMP_TANXZ,AXISCOMP_TANXZ);
@@ -911,7 +910,6 @@ void EEPROM::writeSettings()
     writeInt(EPR_DELTA_TOWERX_OFFSET_STEPS, Com::tEPRTowerXOffset);
     writeInt(EPR_DELTA_TOWERY_OFFSET_STEPS, Com::tEPRTowerYOffset);
     writeInt(EPR_DELTA_TOWERZ_OFFSET_STEPS, Com::tEPRTowerZOffset);
-
     writeFloat(EPR_DELTA_ALPHA_A, Com::tDeltaAlphaA);
     writeFloat(EPR_DELTA_ALPHA_B, Com::tDeltaAlphaB);
     writeFloat(EPR_DELTA_ALPHA_C, Com::tDeltaAlphaC);
