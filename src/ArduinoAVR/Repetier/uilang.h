@@ -683,6 +683,8 @@
 #define UI_TEXT_Y_OFFSET_EN "Set Y offset:%T1mm"
 #define UI_TEXT_Z_OFFSET_EN "Set Z offset:%T2mm"
 
+
+
 // *************** German translation ****************
 
 #define UI_TEXT_ON_DE               "An"

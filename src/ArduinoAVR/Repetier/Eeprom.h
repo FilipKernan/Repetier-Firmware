@@ -458,7 +458,6 @@ static inline void setTowerZFloor(float newZ) {
             HAL::eprSetByte(EPR_INTEGRITY_BYTE,newcheck);
 #endif
     }
-
     static inline float deltaAlphaA() {
 #if EEPROM_MODE != 0
         return HAL::eprGetFloat(EPR_DELTA_ALPHA_A);

@@ -727,6 +727,7 @@ UI_MENU_ACTIONCOMMAND_T(ui_menu_ext_ditto3, UI_TEXT_DITTO_3_ID, UI_DITTO_3)
 #define UI_MENU_EXTRUDER {UI_MENU_ADDCONDBACK UI_MENU_BEDCOND UI_MENU_EXTCOND &ui_menu_go_epos,&ui_menu_ext_origin UI_DITTO_COMMANDS}
 UI_MENU(ui_menu_extruder, UI_MENU_EXTRUDER, UI_MENU_BACKCNT + UI_MENU_BEDCNT + UI_MENU_EXTCNT + 2 + UI_DITTO_COMMANDS_COUNT)
 
+// **** SD card menu
 
 // **** Quick menu
 #if PS_ON_PIN > -1
@@ -865,14 +866,13 @@ UI_MENU_SUBMENU_T(ui_menu_sd_sub, UI_TEXT_SD_CARD_ID, ui_menu_sd)
 
 #define UI_MENU_SD_COND &ui_menu_sd_sub,
 #define UI_MENU_SD_CNT 1
-#else  //////////// this is about else
+#else
 #define UI_MENU_SD_COND
 #define UI_MENU_SD_CNT 0
 #define SD_PRINTFILE_ENTRY
 #define SD_PRINTFILE_ENTRY_CNT 0
 #endif
 
-//// **** AFTER CODE ADD BY XKY
 UI_MENU_ACTIONCOMMAND(ui_menu_run_auto_leveing,UI_TEXT_AUTO_LEVEING,UI_ACTION_RUN_AUTO_LEVEING)
 UI_MENU_ACTIONCOMMAND(ui_menu_test_leveling,UI_TEXT_NOZZLE_TO_HOTBED,UI_ACTION_NOZZLE_CLOSE_HOTBED)
 #define UI_MENU_AUTO_LEVEING {UI_MENU_ADDCONDBACK &ui_menu_run_auto_leveing,&ui_menu_test_leveling,&ui_menu_go_zpos_notest,&ui_menu_set_measured_origin}
@@ -892,7 +892,6 @@ UI_MENU_CHANGEACTION(ui_menu_z_endstop_offset,UI_TEXT_Z_ENDSTOP_OFFSET,UI_ACTION
 #define UI_MENU_DELTA_SETTINGS {UI_MENU_ADDCONDBACK &ui_menu_set_endstop_offset,&ui_menu_delta_rod,&ui_menu_delta_radius,&ui_menu_x_endstop_offset,&ui_menu_y_endstop_offset,&ui_menu_z_endstop_offset}
 UI_MENU(ui_menu_delta_settings, UI_MENU_DELTA_SETTINGS, 7)
 UI_MENU_SUBMENU(ui_menu_conf_delta_settings, "Delta Settings", ui_menu_delta_settings)
-//after code add by xky  ABOUT ADJUST RADIUS MENU
 
 // **** Debugging menu
 UI_MENU_ACTIONCOMMAND_T(ui_menu_debug_echo,    UI_TEXT_DBG_ECHO_ID,    UI_ACTION_DEBUG_ECHO)
@@ -955,11 +954,8 @@ UI_MENU_ACTIONCOMMAND_T(ui_menu_toggle_autolevel, UI_TEXT_AUTOLEVEL_ONOFF_ID, UI
 #define UI_TOOGLE_AUTOLEVEL_ENTRY
 #define UI_TOGGLE_AUTOLEVEL_COUNT 0
 #endif
-
-//AFTER CODE EDIT BY XKY
 #define UI_MENU_GENERAL {UI_MENU_ADDCONDBACK &ui_menu_general_baud,&ui_menu_general_stepper_inactive,&ui_menu_general_max_inactive UI_TOOGLE_AUTOLEVEL_ENTRY}
 UI_MENU(ui_menu_general, UI_MENU_GENERAL, 3 + UI_MENU_BACKCNT + UI_TOGGLE_AUTOLEVEL_COUNT)
-
 
 // **** Extruder configuration
 
@@ -1051,7 +1047,6 @@ UI_MENU_SUBMENU_T(ui_menu_conf_general, UI_TEXT_GENERAL_ID,      ui_menu_general
 UI_MENU_SUBMENU_T(ui_menu_conf_accel,   UI_TEXT_ACCELERATION_ID, ui_menu_accel)
 UI_MENU_SUBMENU_T(ui_menu_conf_feed,    UI_TEXT_FEEDRATE_ID,     ui_menu_feedrate)
 UI_MENU_SUBMENU_T(ui_menu_conf_extr,    UI_TEXT_EXTRUDER_ID,     ui_menu_cextr)
-
 #if HAVE_HEATED_BED
 UI_MENU_SUBMENU_T(ui_menu_conf_bed,    UI_TEXT_HEATING_BED_ID,  ui_menu_bedconf)
 #define UI_MENU_BEDCONF_COND ,&ui_menu_conf_bed
@@ -1088,14 +1083,14 @@ UI_MENU_SUBMENU_T(ui_menu_conf_delta, UI_TEXT_ZCALIB_ID, ui_menu_delta)
 #define UI_MENU_DELTA_CNT 0
 #endif
 #define UI_MENU_CONFIGURATION {UI_MENU_ADDCONDBACK &ui_menu_conf_general LANGMENU_ENTRY ,&ui_menu_conf_accel,&ui_menu_conf_feed,&ui_menu_conf_extr,&ui_menu_conf_delta_settings UI_MENU_BEDCONF_COND UI_MENU_EEPROM_COND UI_MENU_DELTA_COND UI_MENU_SL_COND}
-UI_MENU(ui_menu_configuration,UI_MENU_CONFIGURATION,UI_MENU_BACKCNT+LANGMENU_COUNT+UI_MENU_EEPROM_CNT+UI_MENU_BEDCONF_CNT+UI_MENU_DELTA_CNT+UI_MENU_SL_CNT+5)
+UI_MENU(ui_menu_configuration, UI_MENU_CONFIGURATION, UI_MENU_BACKCNT + LANGMENU_COUNT + UI_MENU_EEPROM_CNT + UI_MENU_BEDCONF_CNT + UI_MENU_DELTA_CNT + UI_MENU_SL_CNT + 5)
 // Main menu
-UI_MENU_SUBMENU_T(ui_menu_main1, UI_TEXT_QUICK_SETTINGS_ID,ui_menu_quick)
-UI_MENU_SUBMENU_T(ui_menu_main2, UI_TEXT_POSITION_ID,ui_menu_positions)
-UI_MENU_SUBMENU_T(ui_menu_main3, UI_TEXT_EXTRUDER_ID,ui_menu_extruder)
-UI_MENU_SUBMENU_T(ui_menu_main4, UI_TEXT_DEBUGGING_ID,ui_menu_debugging)
-UI_MENU_SUBMENU_T(ui_menu_main5, UI_TEXT_CONFIGURATION_ID,ui_menu_configuration)
-UI_MENU_SUBMENU(ui_menu_main6, UI_TEXT_AUTO_LEVEING,ui_menu_autoleveing)             //this submenu add by xky  function about auto leveing
+UI_MENU_SUBMENU_T(ui_menu_main1, UI_TEXT_QUICK_SETTINGS_ID, ui_menu_quick)
+UI_MENU_SUBMENU_T(ui_menu_main2, UI_TEXT_POSITION_ID, ui_menu_positions)
+UI_MENU_SUBMENU_T(ui_menu_main3, UI_TEXT_EXTRUDER_ID, ui_menu_extruder)
+UI_MENU_SUBMENU_T(ui_menu_main4, UI_TEXT_DEBUGGING_ID, ui_menu_debugging)
+UI_MENU_SUBMENU_T(ui_menu_main5, UI_TEXT_CONFIGURATION_ID, ui_menu_configuration)
+UI_MENU_SUBMENU(ui_menu_main6, UI_TEXT_AUTO_LEVEING, ui_menu_autoleveing)
 #define UI_MENU_MAIN {UI_MENU_ADDCONDBACK  &ui_menu_main6,&ui_menu_main1,SD_PRINTFILE_ENTRY &ui_menu_main2,&ui_menu_main3,UI_MENU_FAN_COND UI_MENU_COATING_COND UI_MENU_SD_COND &ui_menu_main4,&ui_menu_main5}
 UI_MENU(ui_menu_main,UI_MENU_MAIN,5+UI_MENU_BACKCNT+UI_MENU_SD_CNT+UI_MENU_FAN_CNT+SD_PRINTFILE_ENTRY_CNT+UI_MENU_COATING_CNT+UI_MENU_AUTO_LEVEING_CNT)
 

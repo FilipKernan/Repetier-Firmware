@@ -244,7 +244,7 @@
 
 // xky
 #define UI_ACTION_DELTA_ROD              1301
-#define	UI_ACTION_DELTA_RADIUS           1302
+#define UI_ACTION_DELTA_RADIUS           1302
 // xky END
 
 #define UI_ACTION_MENU_XPOS             4000
@@ -290,8 +290,8 @@
 #define UI_ACTION_AUTO_SET_ENDSTOP_OFFSET 6005
 #define UI_ACTION_SET_Z_AIXS_TO_ZERO      6006
 #define UI_ACTION_X_ENDSTOP_OFFSET        6016
-#define	UI_ACTION_Y_ENDSTOP_OFFSET        6017
-#define	UI_ACTION_Z_ENDSTOP_OFFSET        6018
+#define UI_ACTION_Y_ENDSTOP_OFFSET        6017
+#define UI_ACTION_Z_ENDSTOP_OFFSET        6018
 // xky END
 
 // Load basic language definition to make sure all values are defined
