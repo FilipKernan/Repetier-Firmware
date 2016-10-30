@@ -2985,7 +2985,7 @@ ZPOS2:
         break;
 
   //after code add by xky	    **************************************************
-	case UI_ACTION_DELTA_ROD:
+    case UI_ACTION_DELTA_ROD:
         float b;
         b = EEPROM::deltaDiagonalRodLength();
         INCREMENT_MIN_MAX(b,0.1,0.1,999.9);
@@ -2993,7 +2993,7 @@ ZPOS2:
         Com::printFLN(PSTR("Delta Rod set to: "),b,3);
         Printer::updateDerivedParameter();
         break;
-	case UI_ACTION_DELTA_RADIUS:
+    case UI_ACTION_DELTA_RADIUS:
         float a;
         a = EEPROM::deltaHorizontalRadius();
         INCREMENT_MIN_MAX(a,0.1,0.1,999.9);
@@ -3002,7 +3002,7 @@ ZPOS2:
         Printer::radius0 = a;
         Printer::updateDerivedParameter();
         break;
-	case UI_ACTION_X_ENDSTOP_OFFSET:       //ADJUST ENDSTOP OFFSET  ADD FOR XKY
+    case UI_ACTION_X_ENDSTOP_OFFSET:       //ADJUST ENDSTOP OFFSET  ADD FOR XKY
         float c;
         c = EEPROM::deltaTowerXOffsetSteps();
         INCREMENT_MIN_MAX(c,1,0.1,9999);
@@ -3010,7 +3010,7 @@ ZPOS2:
         Com::printFLN(PSTR("X Endstop Offset: "),c,3);
         Printer::updateDerivedParameter();
         break;
-	case UI_ACTION_Y_ENDSTOP_OFFSET:      //ADJUST ENDSTOP OFFSET  ADD FOR XKY
+    case UI_ACTION_Y_ENDSTOP_OFFSET:      //ADJUST ENDSTOP OFFSET  ADD FOR XKY
         float d;
         d = EEPROM::deltaTowerYOffsetSteps();
         INCREMENT_MIN_MAX(d,1,0,9999);
@@ -3018,7 +3018,7 @@ ZPOS2:
         Com::printFLN(PSTR("Y Endstop Offset: "),d,3);
         Printer::updateDerivedParameter();
         break;
-	case UI_ACTION_Z_ENDSTOP_OFFSET:      //ADJUST ENDSTOP OFFSET  ADD FOR XKY
+    case UI_ACTION_Z_ENDSTOP_OFFSET:      //ADJUST ENDSTOP OFFSET  ADD FOR XKY
         float e;
         e = EEPROM::deltaTowerZOffsetSteps();
         INCREMENT_MIN_MAX(e,1,0,9999);
@@ -3026,26 +3026,26 @@ ZPOS2:
         Com::printFLN(PSTR("Z Endstop Offset: "),e,3);
         Printer::updateDerivedParameter();
         break;
-	case UI_ACTION_SET_Z_AIXS_TO_ZERO:    //this function about set z aixs to hotbed it can save data
+    case UI_ACTION_SET_Z_AIXS_TO_ZERO:    //this function about set z aixs to hotbed it can save data
         Printer::setNoDestinationCheck(false);
         Commands::printCurrentPosition(PSTR("UI_ACTION_ZPOSITION "));
         Printer::updateCurrentPosition();
         //add by xky can not save if not adjust z height
-			if (Printer::currentPosition[Z_AXIS] < -10 || Printer::currentPosition[Z_AXIS] > 10 || Printer::currentPosition[Z_AXIS] == 0) {
-				UI_STATUS("Err:Adjust Z Hight");
-			} else {
-            Printer::zLength -= Printer::currentPosition[Z_AXIS];
-            Printer::currentPositionSteps[Z_AXIS] = 0;
-            Printer::updateDerivedParameter();
-            transformCartesianStepsToDeltaSteps(Printer::currentPositionSteps, Printer::currentNonlinearPositionSteps);
-            Printer::updateCurrentPosition(true);
-            Com::printFLN(Com::tZProbePrinterHeight, Printer::zLength);
-#if EEPROM_MODE != 0
-            EEPROM::storeDataIntoEEPROM(false);
-            Com::printFLN(Com::tEEPROMUpdated);
-#endif
-            Commands::printCurrentPosition(PSTR("UI_ACTION_SET_MEASURED_ORIGIN "));
+        if (Printer::currentPosition[Z_AXIS] < -10 || Printer::currentPosition[Z_AXIS] > 10 || Printer::currentPosition[Z_AXIS] == 0) {
+            UI_STATUS("Err:Adjust Z Hight");
+            break;
         }
+        Printer::zLength -= Printer::currentPosition[Z_AXIS];
+        Printer::currentPositionSteps[Z_AXIS] = 0;
+        Printer::updateDerivedParameter();
+        transformCartesianStepsToDeltaSteps(Printer::currentPositionSteps, Printer::currentNonlinearPositionSteps);
+        Printer::updateCurrentPosition(true);
+        Com::printFLN(Com::tZProbePrinterHeight, Printer::zLength);
+#if EEPROM_MODE != 0
+        EEPROM::storeDataIntoEEPROM(false);
+        Com::printFLN(Com::tEEPROMUpdated);
+#endif
+        Commands::printCurrentPosition(PSTR("UI_ACTION_SET_MEASURED_ORIGIN "));
         break;
 
 #if DRIVE_SYSTEM != DELTA
