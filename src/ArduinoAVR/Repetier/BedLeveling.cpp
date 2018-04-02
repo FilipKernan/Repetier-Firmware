@@ -115,7 +115,7 @@ requires the extruder to bend the coating thickness without harm!
 #endif
 
 #ifndef BED_LEVELING_GRID_SIZE
-#define BED_LEVELING_GRID_SIZE 5
+#define BED_LEVELING_GRID_SIZE 4
 #endif
 
 #ifndef BED_LEVELING_REPETITIONS
