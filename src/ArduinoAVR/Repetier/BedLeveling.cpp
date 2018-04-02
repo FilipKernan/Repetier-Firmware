@@ -91,7 +91,7 @@ By now the leveling process is finished. All errors that remain are measuring er
 the bed it self. For deltas you can enable distortion correction to follow the bumps.
 
 There are 2 ways to consider a changing bed coating, which are defined by Z_PROBE_Z_OFFSET_MODE.
-Z_PROBE_Z_OFFSET_MODE = 0 means we measure the surface of the bed below any coating. This is e.g. 
+Z_PROBE_Z_OFFSET_MODE = 0 means we measure the surface of the bed below any coating. This is e.g.
 the case with inductive sensors where we put BuildTak on top. In that case we can set Z_PROBE_Z_OFFSET
 to the thickness of BuildTak to compensate. If we later change the coating, we only change Z_PROBE_Z_OFFSET
 to new coating thickness.
@@ -100,7 +100,7 @@ Z_PROBE_Z_OFFSET_MODE = 1 means we measure the surface of the coating, e.g. beca
 In that case we add Z_PROBE_Z_OFFSET for the measured height to compensate for correct distance to bed surface.
 
 In homing to max we reduce z length by Z_PROBE_Z_OFFSET to get a correct height.
-In homing to z min we assume z endstop is bed level so we move up Z_PROBE_Z_OFFSET after endstop is hit. This 
+In homing to z min we assume z endstop is bed level so we move up Z_PROBE_Z_OFFSET after endstop is hit. This
 requires the extruder to bend the coating thickness without harm!
 */
 
@@ -190,11 +190,21 @@ bool measureAutolevelPlane(Plane &plane) {
         for(int iy = 0; iy < BED_LEVELING_GRID_SIZE; iy++) {
             float px = ox + static_cast<float>(ix) * ax + static_cast<float>(iy) * bx;
             float py = oy + static_cast<float>(ix) * ay + static_cast<float>(iy) * by;
-            Printer::moveTo(px,py,IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-            float h = Printer::runZProbe(false,false);
-            if(h == ILLEGAL_Z_PROBE)
-                return false;
-            builder.addPoint(px,py,h);
+            /*
+
+
+            This is where the change is, it is the if statement that contains px
+            I am going to try changing the grid from 5
+            I will try 4
+            */
+            //if(((px*px) + (py*py)) < 22500){
+              Printer::moveTo(px,py,IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
+              float h = Printer::runZProbe(false,false);
+              if(h == ILLEGAL_Z_PROBE)
+                  return false;
+              builder.addPoint(px,py,h);
+            //}
+
         }
     }
 
@@ -259,7 +269,7 @@ void correctAutolevel(GCode *code,Plane &plane) {
 	if(h2 > LIMIT_MOTORIZED_CORRECTION) h2 = LIMIT_MOTORIZED_CORRECTION;
 	if(h3 < -LIMIT_MOTORIZED_CORRECTION) h3 = -LIMIT_MOTORIZED_CORRECTION;
 	if(h3 > LIMIT_MOTORIZED_CORRECTION) h3 = LIMIT_MOTORIZED_CORRECTION;
-#endif	
+#endif
     MotorDriverInterface *motor2 = getMotorDriver(0);
     MotorDriverInterface *motor3 = getMotorDriver(1);
     motor2->setCurrentAs(0);
@@ -601,13 +611,13 @@ void Printer::transformToPrinter(float x,float y,float z,float &transX,float &tr
 	} else {
 		transX = x;
 		transY = y;
-		transZ = z;		
+		transZ = z;
 	}
 #else
 	transX = x;
 	transY = y;
 	transZ = z;
-#endif	
+#endif
 }
 
 void Printer::transformFromPrinter(float x,float y,float z,float &transX,float &transY,float &transZ) {
@@ -619,7 +629,7 @@ void Printer::transformFromPrinter(float x,float y,float z,float &transX,float &
 	} else {
 		transX = x;
 		transY = y;
-		transZ = z;		
+		transZ = z;
 	}
 #else
 	transX = x;
@@ -668,10 +678,10 @@ void Printer::buildTransformationMatrix(Plane &plane) {
     autolevelTransformation[3] /= len;
     autolevelTransformation[4] /= len;
     autolevelTransformation[5] /= len;
-	
+
     Com::printArrayFLN(Com::tTransformationMatrix,autolevelTransformation, 9, 6);
 }
-/* 
+/*
 void Printer::buildTransformationMatrix(float h1,float h2,float h3) {
     float ax = EEPROM::zProbeX2() - EEPROM::zProbeX1();
     float ay = EEPROM::zProbeY2() - EEPROM::zProbeY1();
