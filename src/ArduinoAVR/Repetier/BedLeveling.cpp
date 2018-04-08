@@ -179,33 +179,45 @@ bool measureAutolevelPlane(Plane &plane) {
         return false;
     builder.addPoint(EEPROM::zProbeX3(),EEPROM::zProbeY3(),h);
 #elif BED_LEVELING_METHOD == 1 // linear regression
-    float delta = 1.0 / (BED_LEVELING_GRID_SIZE - 1);
-    float ox = EEPROM::zProbeX1();
-    float oy = EEPROM::zProbeY1();
-    float ax = delta * (EEPROM::zProbeX2() - EEPROM::zProbeX1());
-    float ay = delta * (EEPROM::zProbeY2() - EEPROM::zProbeY1());
-    float bx = delta * (EEPROM::zProbeX3() - EEPROM::zProbeX1());
-    float by = delta * (EEPROM::zProbeY3() - EEPROM::zProbeY1());
-    for(int ix = 0; ix < BED_LEVELING_GRID_SIZE; ix++) {
-        for(int iy = 0; iy < BED_LEVELING_GRID_SIZE; iy++) {
-            float px = ox + static_cast<float>(ix) * ax + static_cast<float>(iy) * bx;
-            float py = oy + static_cast<float>(ix) * ay + static_cast<float>(iy) * by;
-            /*
+    float delta = 1.0 / (BED_LEVELING_GRID_SIZE);
+    // float ox = EEPROM::zProbeX1();
+    // float oy = EEPROM::zProbeY1();
+    // float ax = delta * (EEPROM::zProbeX2() - EEPROM::zProbeX1());
+    // float ay = delta * (EEPROM::zProbeY2() - EEPROM::zProbeY1());
+    // float bx = delta * (EEPROM::zProbeX3() - EEPROM::zProbeX1());
+    // float by = delta * (EEPROM::zProbeY3() - EEPROM::zProbeY1());
 
-
-            This is where the change is, it is the if statement that contains px
-            I am going to try changing the grid from 5
-            I will try 4
-            */
-            //if(((px*px) + (py*py)) < 22500){
-              Printer::moveTo(px,py,IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
-              float h = Printer::runZProbe(false,false);
-              if(h == ILLEGAL_Z_PROBE)
-                  return false;
-              builder.addPoint(px,py,h);
-            //}
-
-        }
+    //probes the origin This needs to be tested
+    Printer::moveTo(0,0,IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
+    float h = Printer::runZProbe(false,false);
+    if(h == ILLEGAL_Z_PROBE)
+        return false;
+    builder.addPoint(px,py,h);
+    //sets some init values
+    float radius = 124.0/static_cast<float>(BED_LEVELING_GRID_SIZE);
+    float pointAngle = (PI)/6.0;
+    float deltaA = (2.0 * PI)/3.0;
+    for(int i = 0; i < BED_LEVELING_GRID_SIZE; i++) {
+          //creates new radius for the circle & resets the pointAngle
+          float newRadius = radius * (i/static_cast<float>(BED_LEVELING_GRID_SIZE));
+          pointAngle = (PI)/6.0;
+          //probes the 3 points in each circle
+          for(int j = 0; j < 3; i++){
+              //calcs the point
+              float px = newRadius * cos(pointAngle);
+              float py = newRadius * sin(pointAngle);
+              //tests if the point is on the glass
+              if(((px*px) + (py*py)) < 15376){
+                //probes the point
+                Printer::moveTo(px,py,IGNORE_COORDINATE,IGNORE_COORDINATE,EEPROM::zProbeXYSpeed());
+                float h = Printer::runZProbe(false,false);
+                if(h == ILLEGAL_Z_PROBE)
+                    return false;
+                builder.addPoint(px,py,h);
+              }
+              //increments the angle 1/3 of the way around the circle
+              pointAngle += deltaA;
+          }
     }
 
 #elif BED_LEVELING_METHOD == 2 // 4 point symmetric
